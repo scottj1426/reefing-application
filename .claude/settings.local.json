@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(if [ -f \"package.json\" ])",
+      "Bash(then cat package.json)",
+      "Bash(else echo \"No package.json found\")",
+      "Bash(fi)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(pnpm prisma generate:*)",
+      "Bash(pnpm prisma migrate dev:*)",
+      "Bash(pnpm prisma studio:*)",
+      "Bash(pnpm dev)",
+      "Bash(curl:*)",
+      "Bash(python:*)",
+      "Bash(pnpm tsc:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm remove:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
