@@ -116,3 +116,183 @@ body {
   font-size: 0.85rem;
   line-height: 1.5;
 }
+
+.user-section {
+  max-width: 900px;
+}
+
+.header-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.header-controls h2 {
+  margin: 0;
+}
+
+.header-controls .logout-btn {
+  margin: 0;
+}
+
+.aquariums-section {
+  margin-top: 1rem;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.section-header h3 {
+  font-size: 1.3rem;
+  color: #1a1a1a;
+}
+
+.add-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: white;
+  background-color: #0070f3;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.add-btn:hover {
+  background-color: #0051cc;
+}
+
+.aquarium-form {
+  background-color: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.aquarium-form input,
+.aquarium-form select,
+.aquarium-form textarea {
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-family: inherit;
+}
+
+.aquarium-form textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.submit-btn {
+  padding: 0.75rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: white;
+  background-color: #10b981;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.submit-btn:hover {
+  background-color: #059669;
+}
+
+.aquariums-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.empty-state {
+  text-align: center;
+  color: #999;
+  padding: 3rem;
+  font-size: 1.1rem;
+}
+
+.aquarium-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1.5rem;
+  transition: box-shadow 0.2s;
+}
+
+.aquarium-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.aquarium-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.aquarium-header h4 {
+  font-size: 1.2rem;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  color: #ef4444;
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.delete-btn:hover {
+  background-color: #fee2e2;
+}
+
+.aquarium-details {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.type-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background-color: #3b82f6;
+  color: white;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.volume {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background-color: #f3f4f6;
+  color: #374151;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.description {
+  margin-top: 0.75rem;
+  color: #6b7280;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
