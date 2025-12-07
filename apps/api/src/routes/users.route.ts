@@ -1,3 +1,4 @@
+/// <reference path="../types/express.d.ts" />
 import { Router, type Request, type Response, type NextFunction } from 'express';
 import { authMiddleware } from '../middleware/auth';
 import { userService } from '../services/user.service';

@@ -15,7 +15,8 @@
       "Bash(python:*)",
       "Bash(pnpm tsc:*)",
       "Bash(pnpm add:*)",
-      "Bash(pnpm remove:*)"
+      "Bash(pnpm remove:*)",
+      "Bash(pnpm install:*)"
     ],
     "deny": [],
     "ask": []
