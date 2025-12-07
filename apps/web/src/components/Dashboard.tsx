@@ -25,18 +25,17 @@ import {
   VStack,
   HStack,
   IconButton,
-  useColorMode,
   useDisclosure,
   Spinner,
   Center,
 } from '@chakra-ui/react';
-import { MoonIcon, SunIcon, DeleteIcon } from '@chakra-ui/icons';
+import { DeleteIcon } from '@chakra-ui/icons';
 import { useAquariums } from '../hooks/useAquariums';
 import type { Aquarium, CreateAquariumDto } from '../types/shared';
 import { Navbar } from './Navbar';
 
 export const Dashboard = () => {
-  const { isAuthenticated, isLoading, loginWithRedirect, logout, user } = useAuth0();
+  const { isAuthenticated, isLoading, loginWithRedirect, user } = useAuth0();
   const navigate = useNavigate();
   const [aquariums, setAquariums] = useState<Aquarium[]>([]);
   const [newAquarium, setNewAquarium] = useState<CreateAquariumDto>({
@@ -47,7 +46,6 @@ export const Dashboard = () => {
   });
   const { getAquariums, createAquarium, deleteAquarium } = useAquariums();
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const { colorMode, toggleColorMode } = useColorMode();
 
   useEffect(() => {
     if (isAuthenticated) {

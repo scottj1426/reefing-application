@@ -27,7 +27,7 @@ import {
   Spinner,
   Center,
 } from '@chakra-ui/react';
-import { ArrowBackIcon, DeleteIcon } from '@chakra-ui/icons';
+import { DeleteIcon } from '@chakra-ui/icons';
 import { useAquariums } from '../hooks/useAquariums';
 import { useEquipment } from '../hooks/useEquipment';
 import { useCorals } from '../hooks/useCorals';

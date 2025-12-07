@@ -14,8 +14,7 @@ import {
   Badge,
   HStack,
   Spinner,
-  Center,
-  Divider,
+  Center
 } from '@chakra-ui/react';
 import { ArrowBackIcon } from '@chakra-ui/icons';
 import axios from 'axios';
