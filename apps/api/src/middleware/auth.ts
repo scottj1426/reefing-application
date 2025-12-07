@@ -23,8 +23,13 @@ export const authMiddleware: (req: Request, res: Response, next: NextFunction) =
     rateLimit: true,
     jwksRequestsPerMinute: 5,
     jwksUri: `https://${AUTH0_DOMAIN}/.well-known/jwks.json`,
+    handleSigningKeyError: (err, cb) => {
+      console.error('JWKS signing key error:', err);
+      cb(err);
+    },
   }) as GetVerificationKey,
   audience: AUTH0_AUDIENCE,
   issuer: AUTH0_ISSUER,
   algorithms: ['RS256'],
+  credentialsRequired: true,
 });

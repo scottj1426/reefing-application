@@ -19,7 +19,8 @@
       "Bash(pnpm install:*)",
       "Bash(git add:*)",
       "Bash(pnpm build:*)",
-      "Bash(pnpm seed:*)"
+      "Bash(pnpm seed:*)",
+      "Bash(pnpm list:*)"
     ],
     "deny": [],
     "ask": []
