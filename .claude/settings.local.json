@@ -25,7 +25,8 @@
       "Bash(findstr:*)",
       "Bash(if [ -f apps/web/.env ])",
       "Bash(then cat apps/web/.env)",
-      "Bash(else echo \"No .env file found\")"
+      "Bash(else echo \"No .env file found\")",
+      "Bash(taskkill:*)"
     ],
     "deny": [],
     "ask": []
