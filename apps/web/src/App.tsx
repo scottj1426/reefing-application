@@ -1,7 +1,7 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { useEffect, useState } from 'react';
 import { useApi } from './hooks/useApi';
-import type { User } from '@reefing/shared-types';
+import type { User } from './types/shared';
 
 function App() {
   const { isAuthenticated, isLoading, loginWithRedirect, logout, user } = useAuth0();
