@@ -1,7 +1,9 @@
+/// <reference path="./types/express.d.ts" />
 import express, { type Express } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import usersRouter from './routes/users.route';
+import aquariumsRouter from './routes/aquariums.route';
 
 dotenv.config();
 
@@ -26,6 +28,7 @@ app.get('/api/health', (req, res) => {
 
 // API routes
 app.use('/api/users', usersRouter);
+app.use('/api/aquariums', aquariumsRouter);
 
 // Root endpoint
 app.get('/', (req, res) => {
