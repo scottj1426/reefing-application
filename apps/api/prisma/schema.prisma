@@ -11,6 +11,7 @@ model User {
   id        String     @id @default(cuid())
   email     String     @unique
   name      String?
+  username  String?    @unique
   auth0Id   String     @unique @map("auth0_id")
   createdAt DateTime   @default(now()) @map("created_at")
   updatedAt DateTime   @updatedAt @map("updated_at")
@@ -20,15 +21,48 @@ model User {
 }
 
 model Aquarium {
-  id          String   @id @default(cuid())
+  id          String      @id @default(cuid())
   name        String
-  type        String   // "reef", "freshwater", "saltwater"
-  volume      Int      // gallons
+  type        String      // "reef", "freshwater", "saltwater"
+  volume      Int         // gallons
   description String?
-  userId      String   @map("user_id")
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  userId      String      @map("user_id")
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  equipment   Equipment[]
+  corals      Coral[]
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
 
   @@map("aquariums")
+}
+
+model Equipment {
+  id         String   @id @default(cuid())
+  name       String
+  type       String   // "filter", "pump", "light", "heater", "skimmer", "wavemaker", "other"
+  brand      String?
+  notes      String?
+  aquariumId String   @map("aquarium_id")
+  aquarium   Aquarium @relation(fields: [aquariumId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("equipment")
+}
+
+model Coral {
+  id              String    @id @default(cuid())
+  species         String
+  placement       String?
+  color           String?
+  size            String?
+  acquisitionDate DateTime? @map("acquisition_date")
+  source          String?
+  notes           String?
+  aquariumId      String    @map("aquarium_id")
+  aquarium        Aquarium  @relation(fields: [aquariumId], references: [id], onDelete: Cascade)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@map("corals")
 }

@@ -4,16 +4,28 @@ import { CreateAquariumDto } from '../types/shared';
 const prisma = new PrismaClient();
 
 export class AquariumService {
-  async findByUserId(userId: string): Promise<Aquarium[]> {
+  async findByUserId(userId: string, includeRelations = false): Promise<Aquarium[]> {
     return prisma.aquarium.findMany({
       where: { userId },
+      include: includeRelations
+        ? {
+            equipment: true,
+            corals: true,
+          }
+        : undefined,
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  async findById(id: string): Promise<Aquarium | null> {
+  async findById(id: string, includeRelations = false): Promise<Aquarium | null> {
     return prisma.aquarium.findUnique({
       where: { id },
+      include: includeRelations
+        ? {
+            equipment: true,
+            corals: true,
+          }
+        : undefined,
     });
   }
 

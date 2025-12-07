@@ -1,0 +1,94 @@
+import { Router, type Request, type Response } from 'express';
+import { PrismaClient } from '@prisma/client';
+import { ApiResponse, Aquarium } from '../types/shared';
+
+const prisma = new PrismaClient();
+
+const router: Router = Router();
+
+// GET /public/explore - Get all public aquariums
+router.get('/explore', async (req: Request, res: Response) => {
+  try {
+    const aquariums = await prisma.aquarium.findMany({
+      include: {
+        equipment: true,
+        corals: true,
+        user: {
+          select: {
+            name: true,
+            username: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const response: ApiResponse<Aquarium[]> = {
+      success: true,
+      data: aquariums,
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error fetching public aquariums:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch aquariums',
+    } as ApiResponse);
+  }
+});
+
+// GET /public/collection/:username - Get public collection for a user
+router.get('/collection/:username', async (req: Request, res: Response) => {
+  try {
+    const { username } = req.params;
+
+    // Find user by username
+    const user = await prisma.user.findUnique({
+      where: { username },
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        aquariums: {
+          include: {
+            equipment: true,
+            corals: true,
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found',
+      } as ApiResponse);
+    }
+
+    const response: ApiResponse<{
+      user: { name: string | null; username: string };
+      aquariums: Aquarium[];
+    }> = {
+      success: true,
+      data: {
+        user: {
+          name: user.name,
+          username: user.username!,
+        },
+        aquariums: user.aquariums,
+      },
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error fetching public collection:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch collection',
+    } as ApiResponse);
+  }
+});
+
+export default router;

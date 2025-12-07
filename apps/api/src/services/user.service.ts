@@ -10,12 +10,34 @@ export class UserService {
     });
   }
 
+  private async generateUniqueUsername(email: string): Promise<string> {
+    // Extract base username from email (part before @)
+    const baseUsername = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+
+    // Try the base username first
+    let username = baseUsername;
+    let exists = await prisma.user.findUnique({ where: { username } });
+
+    // If it exists, append numbers until we find a unique one
+    let counter = 1;
+    while (exists) {
+      username = `${baseUsername}${counter}`;
+      exists = await prisma.user.findUnique({ where: { username } });
+      counter++;
+    }
+
+    return username;
+  }
+
   async createUser(data: CreateUserDto): Promise<User> {
+    const username = await this.generateUniqueUsername(data.email);
+
     return prisma.user.create({
       data: {
         email: data.email,
         name: data.name || null,
         auth0Id: data.auth0Id,
+        username,
       },
     });
   }
