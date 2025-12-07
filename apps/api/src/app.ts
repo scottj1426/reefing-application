@@ -12,36 +12,47 @@ dotenv.config();
 
 const app: Express = express();
 
-// Middleware
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
+// ----------------------
+// CORS CONFIG
+// ----------------------
+const corsOptions = {
+  origin: (origin: any, callback: any) => {
+    // Allow requests with no origin (curl, mobile apps)
     if (!origin) return callback(null, true);
 
-    // Allow all localhost origins
+    // Allow localhost preview
     if (origin.startsWith('http://localhost:')) {
       return callback(null, true);
     }
 
-    // Check against CORS_ORIGIN env var
-    const allowedOrigin = process.env.CORS_ORIGIN;
-    if (allowedOrigin && origin === allowedOrigin) {
+    // Allow the deployed frontend (environment variable)
+    const allowed = process.env.CORS_ORIGIN;
+    if (allowed && origin === allowed) {
       return callback(null, true);
     }
 
     callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  exposedHeaders: ['Content-Type', 'Authorization'],
-  preflightContinue: false,
   optionsSuccessStatus: 204,
-}));
+};
+
+// Apply CORS to all routes
+app.use(cors(corsOptions));
+
+// THIS IS REQUIRED FOR PREFLIGHT ON VERCEL
+app.options('*', cors(corsOptions));
+
+// Body parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Health check endpoint
+// ----------------------
+// ROUTES
+// ----------------------
+
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
@@ -50,7 +61,6 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// API routes
 app.use('/users', usersRouter);
 app.use('/aquariums', aquariumsRouter);
 app.use('/aquariums', equipmentRouter);
