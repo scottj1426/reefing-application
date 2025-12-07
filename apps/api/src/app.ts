@@ -15,37 +15,34 @@ const app: Express = express();
 // ----------------------
 // CORS CONFIG
 // ----------------------
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'https://reefing-application-web.vercel.app',
+  'https://reefing-application-9gjem4yo3-scottj1426-5877s-projects.vercel.app', // Vercel preview
+];
+
 const corsOptions = {
   origin: (origin: any, callback: any) => {
-    // Allow requests with no origin (curl, mobile apps)
-    if (!origin) return callback(null, true);
-
-    // Allow localhost preview
-    if (origin.startsWith('http://localhost:')) {
-      return callback(null, true);
-    }
-
-    // Allow the deployed frontend (environment variable)
-    const allowed = process.env.CORS_ORIGIN;
-    if (allowed && origin === allowed) {
-      return callback(null, true);
-    }
-
+    if (!origin) return callback(null, true); // curl, mobile apps
+    if (allowedOrigins.includes(origin)) return callback(null, true);
     callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   optionsSuccessStatus: 204,
 };
 
-// Apply CORS to all routes
+// Apply CORS middleware
 app.use(cors(corsOptions));
 
-// THIS IS REQUIRED FOR PREFLIGHT ON VERCEL
+// Handle preflight OPTIONS requests (required for serverless)
 app.options('*', cors(corsOptions));
 
+// ----------------------
 // Body parsers
+// ----------------------
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -53,6 +50,7 @@ app.use(express.urlencoded({ extended: true }));
 // ROUTES
 // ----------------------
 
+// Health check
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
@@ -61,13 +59,14 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// API routes
 app.use('/users', usersRouter);
 app.use('/aquariums', aquariumsRouter);
 app.use('/aquariums', equipmentRouter);
 app.use('/aquariums', coralsRouter);
 app.use('/public', publicRouter);
 
-// Root endpoint
+// Root
 app.get('/', (req, res) => {
   res.json({ message: 'Reefing API' });
 });
