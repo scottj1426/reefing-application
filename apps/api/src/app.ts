@@ -32,8 +32,8 @@ app.get('/api/health', (req, res) => {
 });
 
 // API routes
-app.use('/api/users', usersRouter);
-app.use('/api/aquariums', aquariumsRouter);
+app.use('/users', usersRouter);
+app.use('/aquariums', aquariumsRouter);
 
 // Root endpoint
 app.get('/', (req, res) => {

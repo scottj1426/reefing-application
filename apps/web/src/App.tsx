@@ -30,7 +30,6 @@ import {
   Center,
 } from '@chakra-ui/react';
 import { MoonIcon, SunIcon, DeleteIcon } from '@chakra-ui/icons';
-import { useApi } from './hooks/useApi';
 import { useAquariums } from './hooks/useAquariums';
 import type { Aquarium, CreateAquariumDto } from './types/shared';
 
@@ -43,20 +42,18 @@ function App() {
     volume: 0,
     description: '',
   });
-  const { syncUser, getCurrentUser } = useApi();
   const { getAquariums, createAquarium, deleteAquarium } = useAquariums();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { colorMode, toggleColorMode } = useColorMode();
 
   useEffect(() => {
-    if (isAuthenticated && user && user.email) {
-      syncUser(user.email, user.name)
-        .then(() => getCurrentUser())
-        .then(() => getAquariums())
+    if (isAuthenticated) {
+      // Just fetch aquariums - user auto-created on backend if needed
+      getAquariums()
         .then((aquariumData) => setAquariums(aquariumData))
-        .catch((error) => console.error('Failed to sync user:', error));
+        .catch((error) => console.error('Failed to fetch aquariums:', error));
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated]);
 
   const handleCreateAquarium = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -20,7 +20,12 @@
       "Bash(git add:*)",
       "Bash(pnpm build:*)",
       "Bash(pnpm seed:*)",
-      "Bash(pnpm list:*)"
+      "Bash(pnpm list:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(if [ -f apps/web/.env ])",
+      "Bash(then cat apps/web/.env)",
+      "Bash(else echo \"No .env file found\")"
     ],
     "deny": [],
     "ask": []

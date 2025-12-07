@@ -29,35 +29,9 @@ export class UserService {
         email,
         name,
       });
-
-      // Create sample aquariums for new users
-      await this.createSampleAquariums(user.id);
     }
 
     return user;
-  }
-
-  private async createSampleAquariums(userId: string): Promise<void> {
-    const sampleAquariums = [
-      {
-        name: 'Main Reef Display',
-        type: 'reef',
-        volume: 180,
-        description: 'Large mixed reef tank with SPS, LPS, and soft corals.',
-        userId,
-      },
-      {
-        name: 'Nano Reef',
-        type: 'reef',
-        volume: 25,
-        description: 'Small nano reef focused on soft corals and a few small fish.',
-        userId,
-      },
-    ];
-
-    await prisma.aquarium.createMany({
-      data: sampleAquariums,
-    });
   }
 
   async updateUser(auth0Id: string, data: { name?: string }): Promise<User> {
