@@ -18,7 +18,7 @@ export const useApi = () => {
   const syncUser = async (email: string, name?: string): Promise<User> => {
     const headers = await getAuthHeaders();
     const response = await axios.post<ApiResponse<User>>(
-      `${API_URL}/api/users/sync`,
+      `${API_URL}/users/sync`,
       { email, name },
       { headers }
     );
@@ -33,7 +33,7 @@ export const useApi = () => {
   const getCurrentUser = async (): Promise<User> => {
     const headers = await getAuthHeaders();
     const response = await axios.get<ApiResponse<User>>(
-      `${API_URL}/api/users/me`,
+      `${API_URL}/users/me`,
       { headers }
     );
 
