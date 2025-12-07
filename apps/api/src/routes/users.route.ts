@@ -13,13 +13,31 @@ router.use(authMiddleware);
 router.post('/sync', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const auth0Id = req.auth?.sub;
-    const email = req.auth?.['https://reefing.com/email'] || req.auth?.email;
-    const name = req.auth?.['https://reefing.com/name'] || req.auth?.name;
+
+    // Try to get email from token first, then from request body
+    let email = req.auth?.['https://reefing.com/email'] || req.auth?.email;
+    let name = req.auth?.['https://reefing.com/name'] || req.auth?.name;
+
+    // If email not in token, get from request body (sent from frontend)
+    if (!email && req.body.email) {
+      email = req.body.email;
+      name = req.body.name;
+    }
+
+    console.log('Sync attempt - auth0Id:', auth0Id, 'email:', email, 'name:', name);
 
     if (!auth0Id || !email) {
+      console.error('Missing required fields - auth0Id:', auth0Id, 'email:', email);
+      console.log('Request body:', req.body);
+      console.log('Auth keys:', req.auth ? Object.keys(req.auth) : []);
       return res.status(400).json({
         success: false,
         error: 'Missing user information from token',
+        debug: {
+          hasAuth0Id: !!auth0Id,
+          hasEmail: !!email,
+          authKeys: req.auth ? Object.keys(req.auth) : [],
+        },
       } as ApiResponse);
     }
 

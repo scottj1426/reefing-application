@@ -18,9 +18,9 @@ function App() {
   const { getAquariums, createAquarium, deleteAquarium } = useAquariums();
 
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (isAuthenticated && user && user.email) {
       // Sync user to database on login
-      syncUser()
+      syncUser(user.email, user.name)
         .then(() => getCurrentUser())
         .then(() => getAquariums())
         .then((aquariumData) => setAquariums(aquariumData))

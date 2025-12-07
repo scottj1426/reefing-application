@@ -15,11 +15,11 @@ export const useApi = () => {
     };
   };
 
-  const syncUser = async (): Promise<User> => {
+  const syncUser = async (email: string, name?: string): Promise<User> => {
     const headers = await getAuthHeaders();
     const response = await axios.post<ApiResponse<User>>(
       `${API_URL}/api/users/sync`,
-      {},
+      { email, name },
       { headers }
     );
 
