@@ -1,5 +1,5 @@
 import { PrismaClient, User } from '@prisma/client';
-import { CreateUserDto } from '@reefing/shared-types';
+import { CreateUserDto } from '../types/shared';
 
 const prisma = new PrismaClient();
 

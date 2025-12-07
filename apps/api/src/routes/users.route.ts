@@ -1,7 +1,7 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
 import { authMiddleware } from '../middleware/auth';
 import { userService } from '../services/user.service';
-import { ApiResponse, User } from '@reefing/shared-types';
+import { ApiResponse, User } from '../types/shared';
 
 const router: Router = Router();
 
