@@ -12,33 +12,37 @@ dotenv.config();
 
 const app: Express = express();
 
-// ----------------------
-// CORS CONFIG
-// ----------------------
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'https://reefing-application-web.vercel.app',
-  'https://reefing-application-9gjem4yo3-scottj1426-5877s-projects.vercel.app', // Vercel preview
-];
+// Middleware
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
 
-const corsOptions = {
-  origin: (origin: any, callback: any) => {
-    if (!origin) return callback(null, true); // curl, mobile apps
-    if (allowedOrigins.includes(origin)) return callback(null, true);
+    // Allow all localhost origins
+    if (origin.startsWith('http://localhost:')) {
+      return callback(null, true);
+    }
+
+    // Allow Vercel deployments
+    if (origin.includes('vercel.app')) {
+      return callback(null, true);
+    }
+
+    // Check against CORS_ORIGIN env var
+    const allowedOrigin = process.env.CORS_ORIGIN;
+    if (allowedOrigin && origin === allowedOrigin) {
+      return callback(null, true);
+    }
+
     callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Type', 'Authorization'],
+  preflightContinue: false,
   optionsSuccessStatus: 204,
-};
-
-// Apply CORS middleware
-app.use(cors(corsOptions));
-
-// Handle preflight OPTIONS requests (required for serverless)
-app.options('*', cors(corsOptions));
+}));
 
 // ----------------------
 // Body parsers
@@ -60,11 +64,11 @@ app.get('/api/health', (req, res) => {
 });
 
 // API routes
-app.use('/users', usersRouter);
-app.use('/aquariums', aquariumsRouter);
-app.use('/aquariums', equipmentRouter);
-app.use('/aquariums', coralsRouter);
-app.use('/public', publicRouter);
+app.use('/api/users', usersRouter);
+app.use('/api/aquariums', aquariumsRouter);
+app.use('/api/aquariums', equipmentRouter);
+app.use('/api/aquariums', coralsRouter);
+app.use('/api/public', publicRouter);
 
 // Root
 app.get('/', (req, res) => {
