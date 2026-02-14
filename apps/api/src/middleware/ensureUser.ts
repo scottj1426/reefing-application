@@ -63,10 +63,11 @@ export const ensureUser = async (
     req.user = user;
     next();
   } catch (error) {
+    const prismaCode = (error as any)?.code || (error as any)?.meta?.code;
     console.error('Error in ensureUser middleware:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to initialize user',
+      error: prismaCode ? `Failed to initialize user (${prismaCode})` : 'Failed to initialize user',
     });
   }
 };

@@ -1,4 +1,4 @@
-import { PrismaClient, User } from '@prisma/client';
+import { PrismaClient, User, Prisma } from '@prisma/client';
 import { CreateUserDto } from '../types/shared';
 
 const prisma = new PrismaClient();
@@ -42,15 +42,36 @@ export class UserService {
 
   async createUser(data: CreateUserDto): Promise<User> {
     const username = await this.generateUniqueUsername(data.email, data.auth0Id);
-
-    return prisma.user.create({
-      data: {
-        email: data.email,
-        name: data.name || null,
-        auth0Id: data.auth0Id,
-        username,
-      },
-    });
+    try {
+      return await prisma.user.create({
+        data: {
+          email: data.email,
+          name: data.name || null,
+          auth0Id: data.auth0Id,
+          username,
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2022') {
+        return prisma.user.create({
+          data: {
+            email: data.email,
+            name: data.name || null,
+            auth0Id: data.auth0Id,
+          },
+        });
+      }
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        const existingByEmail = await this.findByEmail(data.email);
+        if (existingByEmail) {
+          return prisma.user.update({
+            where: { id: existingByEmail.id },
+            data: { auth0Id: data.auth0Id, name: data.name || existingByEmail.name },
+          });
+        }
+      }
+      throw error;
+    }
   }
 
   async findOrCreate(auth0Id: string, email: string, name?: string): Promise<User> {
