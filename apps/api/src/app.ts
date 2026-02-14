@@ -31,8 +31,8 @@ app.use(cors({
       return callback(null, true);
     }
 
-    // Check against CORS_ORIGIN env var
-    const allowedOrigin = process.env.CORS_ORIGIN;
+    // Check against CORS_ORIGIN env var (strip trailing slash for comparison)
+    const allowedOrigin = process.env.CORS_ORIGIN?.replace(/\/$/, '');
     if (allowedOrigin && origin === allowedOrigin) {
       return callback(null, true);
     }

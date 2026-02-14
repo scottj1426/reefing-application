@@ -2,7 +2,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
 import type { Coral, ApiResponse, CreateCoralDto } from '../types/shared';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 export const useCorals = (aquariumId: string) => {
   const { getAccessTokenSilently } = useAuth0();

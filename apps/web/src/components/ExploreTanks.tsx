@@ -21,7 +21,7 @@ import axios from 'axios';
 import type { Aquarium, Equipment, Coral } from '../types/shared';
 import { Navbar } from './Navbar';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 interface AquariumWithUser extends Aquarium {
   equipment?: Equipment[];
