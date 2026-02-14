@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -28,7 +28,7 @@ import {
   Center,
   Image,
 } from '@chakra-ui/react';
-import { DeleteIcon } from '@chakra-ui/icons';
+import { DeleteIcon, AttachmentIcon } from '@chakra-ui/icons';
 import { useAquariums } from '../hooks/useAquariums';
 import { useEquipment } from '../hooks/useEquipment';
 import { useCorals } from '../hooks/useCorals';
@@ -45,7 +45,9 @@ export const AquariumDetail = () => {
 
   const { getAquarium } = useAquariums();
   const { getEquipment, createEquipment, deleteEquipment } = useEquipment(id || '');
-  const { getCorals, createCoral, deleteCoral, uploadCoralPhoto } = useCorals(id || '');
+  const { getCorals, createCoral, deleteCoral, uploadCoralPhoto, deleteCoralPhoto } = useCorals(id || '');
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingCoralId, setUploadingCoralId] = useState<string | null>(null);
 
   const {
     isOpen: isEquipmentOpen,
@@ -129,6 +131,27 @@ export const AquariumDetail = () => {
       setCoralPhoto(null);
     } catch (error) {
       console.error('Failed to create coral:', error);
+    }
+  };
+
+  const handlePhotoUpload = async (coralId: string, file: File) => {
+    try {
+      setUploadingCoralId(coralId);
+      const updated = await uploadCoralPhoto(coralId, file);
+      setCorals(corals.map((c) => (c.id === coralId ? updated : c)));
+    } catch (error) {
+      console.error('Failed to upload photo:', error);
+    } finally {
+      setUploadingCoralId(null);
+    }
+  };
+
+  const handleDeletePhoto = async (coralId: string) => {
+    try {
+      await deleteCoralPhoto(coralId);
+      setCorals(corals.map((c) => (c.id === coralId ? { ...c, imageUrl: undefined } : c)));
+    } catch (error) {
+      console.error('Failed to delete photo:', error);
     }
   };
 
@@ -258,20 +281,44 @@ export const AquariumDetail = () => {
             <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }} gap={4}>
               {corals.map((coral) => (
                 <Card key={coral.id} overflow="hidden">
-                  {coral.imageUrl ? (
-                    <Image
-                      src={coral.imageUrl}
-                      alt={coral.species}
-                      h="160px"
-                      w="100%"
-                      objectFit="cover"
-                    />
-                  ) : (
-                    <Box
-                      h="80px"
-                      bgGradient="linear(to-br, purple.400, ocean.600)"
-                    />
-                  )}
+                  <Box position="relative">
+                    {coral.imageUrl ? (
+                      <Image
+                        src={coral.imageUrl}
+                        alt={coral.species}
+                        h="160px"
+                        w="100%"
+                        objectFit="cover"
+                      />
+                    ) : (
+                      <Box
+                        h="80px"
+                        bgGradient="linear(to-br, purple.400, ocean.600)"
+                      />
+                    )}
+                    <HStack position="absolute" top={2} right={2} spacing={1}>
+                      {coral.imageUrl && (
+                        <IconButton
+                          aria-label="Delete photo"
+                          icon={<DeleteIcon />}
+                          size="xs"
+                          colorScheme="red"
+                          onClick={() => handleDeletePhoto(coral.id)}
+                        />
+                      )}
+                      <IconButton
+                        aria-label="Upload photo"
+                        icon={uploadingCoralId === coral.id ? <Spinner size="xs" /> : <AttachmentIcon />}
+                        size="xs"
+                        colorScheme="ocean"
+                        isDisabled={uploadingCoralId === coral.id}
+                        onClick={() => {
+                          setUploadingCoralId(coral.id);
+                          photoInputRef.current?.click();
+                        }}
+                      />
+                    </HStack>
+                  </Box>
                   <CardHeader>
                     <HStack justify="space-between">
                       <VStack align="start" spacing={0}>
@@ -317,6 +364,21 @@ export const AquariumDetail = () => {
         </Box>
         </VStack>
       </Container>
+
+      {/* Hidden file input for coral photo uploads */}
+      <input
+        ref={photoInputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file && uploadingCoralId) {
+            handlePhotoUpload(uploadingCoralId, file);
+          }
+          e.target.value = '';
+        }}
+      />
 
       {/* Add Equipment Modal */}
       <Modal isOpen={isEquipmentOpen} onClose={onEquipmentClose}>
@@ -409,13 +471,23 @@ export const AquariumDetail = () => {
                 />
                 <Box w="full">
                   <Text fontSize="sm" mb={1} color="gray.600">Photo (optional)</Text>
-                  <Input
+                  <input
                     type="file"
                     accept="image/*"
+                    id="coral-photo-input"
+                    style={{ display: 'none' }}
                     onChange={(e) => setCoralPhoto(e.target.files?.[0] || null)}
-                    pt={1}
-                    sx={{ '::file-selector-button': { mr: 2 } }}
                   />
+                  <Button
+                    as="label"
+                    htmlFor="coral-photo-input"
+                    variant="outline"
+                    w="full"
+                    cursor="pointer"
+                    leftIcon={<AttachmentIcon />}
+                  >
+                    {coralPhoto ? coralPhoto.name : 'Choose Photo'}
+                  </Button>
                 </Box>
                 <Button type="submit" colorScheme="ocean" w="full">
                   Add Coral
