@@ -1,10 +1,37 @@
 import { Router, type Request, type Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { ApiResponse, Aquarium } from '../types/shared';
+import { getSignedImageUrl } from '../services/s3.service';
 
 const prisma = new PrismaClient();
 
 const router: Router = Router();
+
+// Helper: attach signed imageUrl and strip internal imageKey from responses
+async function attachImageUrlsToAquariums(aquariums: any[]): Promise<any[]> {
+  return Promise.all(
+    aquariums.map(async (aquarium) => {
+      if (aquarium.corals) {
+        const coralsWithUrls = await Promise.all(
+          aquarium.corals.map(async (coral: any) => {
+            const { imageKey, ...rest } = coral;
+            if (imageKey) {
+              try {
+                const imageUrl = await getSignedImageUrl(imageKey);
+                return { ...rest, imageUrl };
+              } catch {
+                return rest;
+              }
+            }
+            return rest;
+          })
+        );
+        return { ...aquarium, corals: coralsWithUrls };
+      }
+      return aquarium;
+    })
+  );
+}
 
 // GET /public/explore - Get all public aquariums
 router.get('/explore', async (req: Request, res: Response) => {
@@ -23,9 +50,11 @@ router.get('/explore', async (req: Request, res: Response) => {
       orderBy: { createdAt: 'desc' },
     });
 
+    const aquariumsWithUrls = await attachImageUrlsToAquariums(aquariums);
+
     const response: ApiResponse<Aquarium[]> = {
       success: true,
-      data: aquariums,
+      data: aquariumsWithUrls,
     };
 
     res.json(response);
@@ -77,7 +106,7 @@ router.get('/collection/:username', async (req: Request, res: Response) => {
           name: user.name,
           username: user.username!,
         },
-        aquariums: user.aquariums,
+        aquariums: await attachImageUrlsToAquariums(user.aquariums),
       },
     };
 

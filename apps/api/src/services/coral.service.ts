@@ -38,6 +38,20 @@ class CoralService {
       where: { id },
     });
   }
+
+  async updateImageKey(id: string, imageKey: string): Promise<Coral> {
+    return await prisma.coral.update({
+      where: { id },
+      data: { imageKey },
+    });
+  }
+
+  async clearImageKey(id: string): Promise<Coral> {
+    return await prisma.coral.update({
+      where: { id },
+      data: { imageKey: null },
+    });
+  }
 }
 
 export const coralService = new CoralService();

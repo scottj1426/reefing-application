@@ -30,6 +30,7 @@ export interface Coral {
   acquisitionDate: Date | null;
   source: string | null;
   notes: string | null;
+  imageUrl?: string | null;
   aquariumId: string;
   createdAt: Date;
   updatedAt: Date;

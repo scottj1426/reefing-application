@@ -26,6 +26,7 @@ import {
   Badge,
   Spinner,
   Center,
+  Image,
 } from '@chakra-ui/react';
 import { DeleteIcon } from '@chakra-ui/icons';
 import { useAquariums } from '../hooks/useAquariums';
@@ -44,7 +45,7 @@ export const AquariumDetail = () => {
 
   const { getAquarium } = useAquariums();
   const { getEquipment, createEquipment, deleteEquipment } = useEquipment(id || '');
-  const { getCorals, createCoral, deleteCoral } = useCorals(id || '');
+  const { getCorals, createCoral, deleteCoral, uploadCoralPhoto } = useCorals(id || '');
 
   const {
     isOpen: isEquipmentOpen,
@@ -68,6 +69,7 @@ export const AquariumDetail = () => {
     source: '',
     notes: '',
   });
+  const [coralPhoto, setCoralPhoto] = useState<File | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -117,10 +119,14 @@ export const AquariumDetail = () => {
   const handleCreateCoral = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const created = await createCoral(newCoral);
+      let created = await createCoral(newCoral);
+      if (coralPhoto) {
+        created = await uploadCoralPhoto(created.id, coralPhoto);
+      }
       setCorals([created, ...corals]);
       onCoralClose();
       setNewCoral({ species: '', placement: '', color: '', size: '', source: '', notes: '' });
+      setCoralPhoto(null);
     } catch (error) {
       console.error('Failed to create coral:', error);
     }
@@ -251,7 +257,21 @@ export const AquariumDetail = () => {
           ) : (
             <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }} gap={4}>
               {corals.map((coral) => (
-                <Card key={coral.id}>
+                <Card key={coral.id} overflow="hidden">
+                  {coral.imageUrl ? (
+                    <Image
+                      src={coral.imageUrl}
+                      alt={coral.species}
+                      h="160px"
+                      w="100%"
+                      objectFit="cover"
+                    />
+                  ) : (
+                    <Box
+                      h="80px"
+                      bgGradient="linear(to-br, purple.400, ocean.600)"
+                    />
+                  )}
                   <CardHeader>
                     <HStack justify="space-between">
                       <VStack align="start" spacing={0}>
@@ -387,6 +407,16 @@ export const AquariumDetail = () => {
                   onChange={(e) => setNewCoral({ ...newCoral, notes: e.target.value })}
                   resize="vertical"
                 />
+                <Box w="full">
+                  <Text fontSize="sm" mb={1} color="gray.600">Photo (optional)</Text>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setCoralPhoto(e.target.files?.[0] || null)}
+                    pt={1}
+                    sx={{ '::file-selector-button': { mr: 2 } }}
+                  />
+                </Box>
                 <Button type="submit" colorScheme="ocean" w="full">
                   Add Coral
                 </Button>

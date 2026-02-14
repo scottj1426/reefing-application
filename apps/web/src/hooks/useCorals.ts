@@ -64,10 +64,39 @@ export const useCorals = (aquariumId: string) => {
     await axios.delete(`${API_URL}/api/aquariums/${aquariumId}/corals/${id}`, { headers });
   };
 
+  const uploadCoralPhoto = async (coralId: string, file: File): Promise<Coral> => {
+    const token = await getAccessTokenSilently();
+    const formData = new FormData();
+    formData.append('photo', file);
+
+    const response = await axios.post<ApiResponse<Coral>>(
+      `${API_URL}/api/aquariums/${aquariumId}/corals/${coralId}/photo`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (!response.data.success || !response.data.data) {
+      throw new Error('Failed to upload photo');
+    }
+
+    return response.data.data;
+  };
+
+  const deleteCoralPhoto = async (coralId: string): Promise<void> => {
+    const headers = await getAuthHeaders();
+    await axios.delete(`${API_URL}/api/aquariums/${aquariumId}/corals/${coralId}/photo`, { headers });
+  };
+
   return {
     getCorals,
     createCoral,
     updateCoral,
     deleteCoral,
+    uploadCoralPhoto,
+    deleteCoralPhoto,
   };
 };

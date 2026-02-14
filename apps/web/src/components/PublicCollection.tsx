@@ -16,6 +16,7 @@ import {
   Spinner,
   Center,
   Divider,
+  Image,
 } from '@chakra-ui/react';
 import { ArrowBackIcon } from '@chakra-ui/icons';
 import axios from 'axios';
@@ -195,12 +196,21 @@ export const PublicCollection = () => {
                           {aquarium.corals.map((coral) => (
                             <Box
                               key={coral.id}
-                              p={3}
                               borderWidth="1px"
                               borderRadius="md"
                               borderColor="gray.200"
+                              overflow="hidden"
                             >
-                              <VStack align="start" spacing={1}>
+                              {coral.imageUrl && (
+                                <Image
+                                  src={coral.imageUrl}
+                                  alt={coral.species}
+                                  h="120px"
+                                  w="100%"
+                                  objectFit="cover"
+                                />
+                              )}
+                              <VStack align="start" spacing={1} p={3}>
                                 <Text fontWeight="bold">{coral.species}</Text>
                                 {coral.color && (
                                   <Badge size="sm" colorScheme="purple">

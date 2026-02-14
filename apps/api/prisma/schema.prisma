@@ -59,6 +59,7 @@ model Coral {
   acquisitionDate DateTime? @map("acquisition_date")
   source          String?
   notes           String?
+  imageKey        String?   @map("image_key")
   aquariumId      String    @map("aquarium_id")
   aquarium        Aquarium  @relation(fields: [aquariumId], references: [id], onDelete: Cascade)
   createdAt       DateTime  @default(now()) @map("created_at")

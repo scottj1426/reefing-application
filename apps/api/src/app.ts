@@ -8,6 +8,7 @@ import aquariumsRouter from './routes/aquariums.route';
 import equipmentRouter from './routes/equipment.route';
 import coralsRouter from './routes/corals.route';
 import publicRouter from './routes/public.route';
+import { S3Client, HeadBucketCommand } from '@aws-sdk/client-s3';
 
 dotenv.config();
 
@@ -92,6 +93,40 @@ app.get('/api/health/db', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Database health check failed',
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+// S3 health check
+app.get('/api/health/s3', async (req, res) => {
+  try {
+    const bucket = process.env.AWS_BUCKET_NAME;
+    if (!bucket) {
+      return res.status(500).json({
+        success: false,
+        error: 'AWS_BUCKET_NAME not configured',
+        timestamp: new Date().toISOString(),
+      });
+    }
+    const s3Config: any = { region: process.env.AWS_REGION || 'us-east-1' };
+    if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
+      s3Config.credentials = {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      };
+    }
+    const s3 = new S3Client(s3Config);
+    await s3.send(new HeadBucketCommand({ Bucket: bucket }));
+
+    res.json({
+      success: true,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: 'S3 health check failed',
       timestamp: new Date().toISOString(),
     });
   }
