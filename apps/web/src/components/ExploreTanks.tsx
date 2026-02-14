@@ -42,7 +42,7 @@ export const ExploreTanks = () => {
     const fetchAquariums = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`${API_URL}/public/explore`);
+        const response = await axios.get(`${API_URL}/api/public/explore`);
 
         if (response.data.success) {
           setAquariums(response.data.data);

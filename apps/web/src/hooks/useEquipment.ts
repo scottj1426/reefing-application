@@ -18,7 +18,7 @@ export const useEquipment = (aquariumId: string) => {
   const getEquipment = async (): Promise<Equipment[]> => {
     const headers = await getAuthHeaders();
     const response = await axios.get<ApiResponse<Equipment[]>>(
-      `${API_URL}/aquariums/${aquariumId}/equipment`,
+      `${API_URL}/api/aquariums/${aquariumId}/equipment`,
       { headers }
     );
 
@@ -32,7 +32,7 @@ export const useEquipment = (aquariumId: string) => {
   const createEquipment = async (data: CreateEquipmentDto): Promise<Equipment> => {
     const headers = await getAuthHeaders();
     const response = await axios.post<ApiResponse<Equipment>>(
-      `${API_URL}/aquariums/${aquariumId}/equipment`,
+      `${API_URL}/api/aquariums/${aquariumId}/equipment`,
       data,
       { headers }
     );
@@ -50,7 +50,7 @@ export const useEquipment = (aquariumId: string) => {
   ): Promise<Equipment> => {
     const headers = await getAuthHeaders();
     const response = await axios.put<ApiResponse<Equipment>>(
-      `${API_URL}/aquariums/${aquariumId}/equipment/${id}`,
+      `${API_URL}/api/aquariums/${aquariumId}/equipment/${id}`,
       data,
       { headers }
     );
@@ -64,7 +64,7 @@ export const useEquipment = (aquariumId: string) => {
 
   const deleteEquipment = async (id: string): Promise<void> => {
     const headers = await getAuthHeaders();
-    await axios.delete(`${API_URL}/aquariums/${aquariumId}/equipment/${id}`, { headers });
+    await axios.delete(`${API_URL}/api/aquariums/${aquariumId}/equipment/${id}`, { headers });
   };
 
   return {

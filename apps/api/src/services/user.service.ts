@@ -51,6 +51,14 @@ export class UserService {
         email,
         name,
       });
+    } else {
+      // Update email if it's still a placeholder
+      if (user.email.includes('@auth0.placeholder') && !email.includes('@auth0.placeholder')) {
+        user = await prisma.user.update({
+          where: { auth0Id },
+          data: { email, name: name || user.name },
+        });
+      }
     }
 
     return user;

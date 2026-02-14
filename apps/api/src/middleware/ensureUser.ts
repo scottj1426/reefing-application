@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { userService } from '../services/user.service';
 import { User } from '@prisma/client';
+import axios from 'axios';
 
 /**
  * Middleware that auto-creates user on first API call.
@@ -25,14 +26,34 @@ export const ensureUser = async (
     // Find or create user
     let user = await userService.findByAuth0Id(auth0Id);
 
-    if (!user) {
-      // New user - create with auth0Id
-      const email = req.auth?.email ||
-                    req.auth?.['https://reefing.com/email'] ||
-                    `${auth0Id}@auth0.placeholder`;
-      const name = req.auth?.name || req.auth?.['https://reefing.com/name'];
+    if (!user || user.email.includes('@auth0.placeholder')) {
+      // Fetch user info from Auth0 to get real email
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      let email = `${auth0Id}@auth0.placeholder`;
+      let name = undefined;
 
-      console.log(`Creating new user: ${auth0Id}`);
+      try {
+        const AUTH0_DOMAIN = process.env.AUTH0_DOMAIN;
+        const userInfoResponse = await axios.get(`https://${AUTH0_DOMAIN}/userinfo`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        email = userInfoResponse.data.email || email;
+        name = userInfoResponse.data.name || userInfoResponse.data.nickname;
+
+        console.log(`Got user info from Auth0: email=${email}, name=${name}`);
+      } catch (error) {
+        console.error('Failed to fetch user info from Auth0:', error);
+      }
+
+      if (!user) {
+        console.log(`Creating new user: ${auth0Id} with email: ${email}`);
+      } else {
+        console.log(`Updating user: ${auth0Id} from placeholder to real email: ${email}`);
+      }
+
       user = await userService.findOrCreate(auth0Id, email, name);
     }
 

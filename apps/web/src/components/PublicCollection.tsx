@@ -48,7 +48,7 @@ export const PublicCollection = () => {
 
       try {
         setLoading(true);
-        const response = await axios.get(`${API_URL}/public/collection/${username}`);
+        const response = await axios.get(`${API_URL}/api/public/collection/${username}`);
 
         if (response.data.success) {
           setData(response.data.data);

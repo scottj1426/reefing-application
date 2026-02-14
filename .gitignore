@@ -21,5 +21,9 @@ build/
 .DS_Store
 Thumbs.db
 
+# Claude Code
+.agents/
+.claude/skills/
+
 # Misc
 *.log

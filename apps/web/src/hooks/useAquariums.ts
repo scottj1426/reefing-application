@@ -18,7 +18,7 @@ export const useAquariums = () => {
   const getAquariums = async (): Promise<Aquarium[]> => {
     const headers = await getAuthHeaders();
     const response = await axios.get<ApiResponse<Aquarium[]>>(
-      `${API_URL}/aquariums`,
+      `${API_URL}/api/aquariums`,
       { headers }
     );
 
@@ -32,7 +32,7 @@ export const useAquariums = () => {
   const getAquarium = async (id: string): Promise<Aquarium> => {
     const headers = await getAuthHeaders();
     const response = await axios.get<ApiResponse<Aquarium>>(
-      `${API_URL}/aquariums/${id}`,
+      `${API_URL}/api/aquariums/${id}`,
       { headers }
     );
 
@@ -46,7 +46,7 @@ export const useAquariums = () => {
   const createAquarium = async (data: CreateAquariumDto): Promise<Aquarium> => {
     const headers = await getAuthHeaders();
     const response = await axios.post<ApiResponse<Aquarium>>(
-      `${API_URL}/aquariums`,
+      `${API_URL}/api/aquariums`,
       data,
       { headers }
     );
@@ -64,7 +64,7 @@ export const useAquariums = () => {
   ): Promise<Aquarium> => {
     const headers = await getAuthHeaders();
     const response = await axios.put<ApiResponse<Aquarium>>(
-      `${API_URL}/aquariums/${id}`,
+      `${API_URL}/api/aquariums/${id}`,
       data,
       { headers }
     );
@@ -78,7 +78,7 @@ export const useAquariums = () => {
 
   const deleteAquarium = async (id: string): Promise<void> => {
     const headers = await getAuthHeaders();
-    await axios.delete(`${API_URL}/aquariums/${id}`, { headers });
+    await axios.delete(`${API_URL}/api/aquariums/${id}`, { headers });
   };
 
   return {
