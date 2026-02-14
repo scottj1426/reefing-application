@@ -6,10 +6,12 @@ import { ensureUser } from '../middleware/ensureUser';
 import { coralService } from '../services/coral.service';
 import { aquariumService } from '../services/aquarium.service';
 import { uploadToS3, getSignedImageUrl, deleteFromS3 } from '../services/s3.service';
+import { uploadLimiter } from '../app';
 import { ApiResponse, Coral, CreateCoralDto } from '../types/shared';
 
 const router: Router = Router();
 const MAX_FILE_SIZE = 4.5 * 1024 * 1024; // 4.5MB (Vercel serverless body limit)
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_FILE_SIZE },
@@ -121,7 +123,7 @@ router.post('/:aquariumId/corals', async (req: Request, res: Response, next: Nex
 });
 
 // POST /aquariums/:aquariumId/corals/:id/photo - Upload coral photo
-router.post('/:aquariumId/corals/:id/photo', upload.single('photo'), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/:aquariumId/corals/:id/photo', uploadLimiter, upload.single('photo'), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { aquariumId, id } = req.params;
     const file = req.file;
@@ -130,8 +132,8 @@ router.post('/:aquariumId/corals/:id/photo', upload.single('photo'), async (req:
       return res.status(400).json({ success: false, error: 'No file uploaded' } as ApiResponse);
     }
 
-    if (!file.mimetype.startsWith('image/')) {
-      return res.status(400).json({ success: false, error: 'File must be an image' } as ApiResponse);
+    if (!ALLOWED_IMAGE_TYPES.includes(file.mimetype)) {
+      return res.status(400).json({ success: false, error: 'File must be a JPEG, PNG, WebP, or GIF image' } as ApiResponse);
     }
 
     const existing = await coralService.findById(id);

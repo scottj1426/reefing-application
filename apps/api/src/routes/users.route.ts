@@ -5,10 +5,12 @@ import { authMiddleware } from '../middleware/auth';
 import { ensureUser } from '../middleware/ensureUser';
 import { userService } from '../services/user.service';
 import { uploadProfileImageToS3, getSignedImageUrl, deleteFromS3 } from '../services/s3.service';
+import { uploadLimiter } from '../app';
 import { ApiResponse, User } from '../types/shared';
 
 const router: Router = Router();
 const MAX_FILE_SIZE = 4.5 * 1024 * 1024; // 4.5MB (Vercel serverless body limit)
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_FILE_SIZE },
@@ -48,19 +50,16 @@ router.get('/me', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // POST /api/users/me/photo - Upload profile photo
-router.post('/me/photo', upload.single('photo'), async (req: Request, res: Response) => {
+router.post('/me/photo', uploadLimiter, upload.single('photo'), async (req: Request, res: Response) => {
   try {
     const file = req.file;
-    console.log(`Profile photo upload requested by user ${req.user?.id}`);
 
     if (!file) {
-      console.warn('Profile photo upload failed: no file provided');
       return res.status(400).json({ success: false, error: 'No file uploaded' } as ApiResponse);
     }
 
-    if (!file.mimetype.startsWith('image/')) {
-      console.warn(`Profile photo upload failed: invalid mimetype ${file.mimetype}`);
-      return res.status(400).json({ success: false, error: 'File must be an image' } as ApiResponse);
+    if (!ALLOWED_IMAGE_TYPES.includes(file.mimetype)) {
+      return res.status(400).json({ success: false, error: 'File must be a JPEG, PNG, WebP, or GIF image' } as ApiResponse);
     }
 
     const existingKey = (req.user as any).profileImageKey as string | null | undefined;
@@ -72,13 +71,11 @@ router.post('/me/photo', upload.single('photo'), async (req: Request, res: Respo
       }
     }
 
-    console.log(`Uploading profile photo: name=${file.originalname}, size=${file.size}`);
     const key = await uploadProfileImageToS3(file.buffer, file.originalname, file.mimetype, req.user!.id);
     const updated = await userService.updateProfileImageKey(req.user!.auth0Id, key);
     const profileImageUrl = await getSignedImageUrl(key);
     const { profileImageKey, ...rest } = updated as any;
 
-    console.log(`Profile photo upload successful for user ${req.user?.id}`);
     res.json({
       success: true,
       data: { ...rest, profileImageUrl },

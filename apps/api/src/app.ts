@@ -1,6 +1,8 @@
 /// <reference path="./types/express.d.ts" />
 import express, { type Express } from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 import usersRouter from './routes/users.route';
@@ -8,26 +10,50 @@ import aquariumsRouter from './routes/aquariums.route';
 import equipmentRouter from './routes/equipment.route';
 import coralsRouter from './routes/corals.route';
 import publicRouter from './routes/public.route';
-import { S3Client, HeadBucketCommand } from '@aws-sdk/client-s3';
+import { authMiddleware } from './middleware/auth';
 
 dotenv.config();
 
 const app: Express = express();
 const prisma = new PrismaClient();
 
-// Middleware
+const isProduction = process.env.NODE_ENV?.toLowerCase() === 'production';
+
+// Security headers
+app.use(helmet());
+
+// Rate limiting
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // 100 requests per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Too many requests, please try again later' },
+});
+
+const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20, // 20 uploads per 15 minutes
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Too many uploads, please try again later' },
+});
+
+app.use('/api/', apiLimiter);
+
+// CORS
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
 
-    // Allow all localhost origins
-    if (origin.startsWith('http://localhost:')) {
+    // In development, allow localhost
+    if (!isProduction && origin.startsWith('http://localhost:')) {
       return callback(null, true);
     }
 
-    // Allow Vercel deployments
-    if (origin.includes('vercel.app')) {
+    // Allow this project's Vercel deployments
+    if (origin.endsWith('.vercel.app') && origin.includes('reefing-application')) {
       return callback(null, true);
     }
 
@@ -50,14 +76,14 @@ app.use(cors({
 // ----------------------
 // Body parsers
 // ----------------------
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // ----------------------
 // ROUTES
 // ----------------------
 
-// Health check
+// Health check (public, lightweight)
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
@@ -66,27 +92,12 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-app.get('/api/health/db', async (req, res) => {
+// Detailed health checks require auth
+app.get('/api/health/db', authMiddleware, async (req, res) => {
   try {
-    const databaseUrl = process.env.DATABASE_URL;
-    const host = databaseUrl ? new URL(databaseUrl).host : null;
-
-    const [users, aquariums, corals, equipment] = await Promise.all([
-      prisma.user.count(),
-      prisma.aquarium.count(),
-      prisma.coral.count(),
-      prisma.equipment.count(),
-    ]);
-
+    await prisma.$queryRaw`SELECT 1`;
     res.json({
       success: true,
-      dbHost: host,
-      counts: {
-        users,
-        aquariums,
-        corals,
-        equipment,
-      },
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
@@ -98,14 +109,14 @@ app.get('/api/health/db', async (req, res) => {
   }
 });
 
-// S3 health check
-app.get('/api/health/s3', async (req, res) => {
+app.get('/api/health/s3', authMiddleware, async (req, res) => {
   try {
+    const { S3Client, HeadBucketCommand } = await import('@aws-sdk/client-s3');
     const bucket = process.env.AWS_BUCKET_NAME;
     if (!bucket) {
       return res.status(500).json({
         success: false,
-        error: 'AWS_BUCKET_NAME not configured',
+        error: 'S3 not configured',
         timestamp: new Date().toISOString(),
       });
     }
@@ -144,4 +155,5 @@ app.get('/', (req, res) => {
   res.json({ message: 'Reefing API' });
 });
 
+export { uploadLimiter };
 export default app;

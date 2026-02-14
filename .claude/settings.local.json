@@ -42,7 +42,12 @@
       "Bash(pnpm --filter web build:*)",
       "Bash(pkill:*)",
       "Bash(npx vercel env ls:*)",
-      "Bash(npx vercel:*)"
+      "Bash(npx vercel:*)",
+      "Bash(grep:*)",
+      "Bash(git stash:*)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)",
+      "Bash(do npx vercel env rm AWS_REGION $env -y)"
     ],
     "deny": [],
     "ask": []
