@@ -45,6 +45,7 @@ export interface Aquarium {
   type: string;
   volume: number;
   description: string | null;
+  imageUrl?: string | null;
   userId: string;
   equipment?: Equipment[];
   corals?: Coral[];

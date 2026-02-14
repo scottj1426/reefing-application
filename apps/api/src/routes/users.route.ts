@@ -5,7 +5,7 @@ import { authMiddleware } from '../middleware/auth';
 import { ensureUser } from '../middleware/ensureUser';
 import { userService } from '../services/user.service';
 import { uploadProfileImageToS3, getSignedImageUrl, deleteFromS3 } from '../services/s3.service';
-import { uploadLimiter } from '../app';
+import { uploadLimiter } from '../middleware/rateLimiters';
 import { ApiResponse, User } from '../types/shared';
 
 const router: Router = Router();

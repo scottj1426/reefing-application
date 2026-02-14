@@ -30,6 +30,7 @@ import {
   useToast,
   Spinner,
   Center,
+  Image,
 } from '@chakra-ui/react';
 import { DeleteIcon } from '@chakra-ui/icons';
 import { useAquariums } from '../hooks/useAquariums';
@@ -295,18 +296,28 @@ export const Dashboard = () => {
                     _hover={{ transform: 'translateY(-4px)', shadow: 'lg' }}
                     transition="all 0.2s"
                   >
-                    {/* Gradient placeholder image */}
-                    <Box
-                      h="200px"
-                      bgGradient={
-                        aquarium.type === 'reef'
-                          ? 'linear(to-br, reef.400, ocean.600)'
-                          : aquarium.type === 'saltwater'
-                          ? 'linear(to-br, blue.400, ocean.600)'
-                          : 'linear(to-br, green.400, teal.600)'
-                      }
-                      borderTopRadius="lg"
-                    />
+                    <Box h="200px" borderTopRadius="lg" overflow="hidden">
+                      {aquarium.imageUrl ? (
+                        <Image
+                          src={aquarium.imageUrl}
+                          alt={aquarium.name}
+                          h="200px"
+                          w="100%"
+                          objectFit="cover"
+                        />
+                      ) : (
+                        <Box
+                          h="200px"
+                          bgGradient={
+                            aquarium.type === 'reef'
+                              ? 'linear(to-br, reef.400, ocean.600)'
+                              : aquarium.type === 'saltwater'
+                              ? 'linear(to-br, blue.400, ocean.600)'
+                              : 'linear(to-br, green.400, teal.600)'
+                          }
+                        />
+                      )}
+                    </Box>
 
                     <CardHeader>
                       <Flex justify="space-between" align="start">

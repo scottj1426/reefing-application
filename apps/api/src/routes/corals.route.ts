@@ -6,7 +6,7 @@ import { ensureUser } from '../middleware/ensureUser';
 import { coralService } from '../services/coral.service';
 import { aquariumService } from '../services/aquarium.service';
 import { uploadToS3, getSignedImageUrl, deleteFromS3 } from '../services/s3.service';
-import { uploadLimiter } from '../app';
+import { uploadLimiter } from '../middleware/rateLimiters';
 import { ApiResponse, Coral, CreateCoralDto } from '../types/shared';
 
 const router: Router = Router();

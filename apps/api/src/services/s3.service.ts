@@ -60,6 +60,27 @@ export async function uploadProfileImageToS3(
   return key;
 }
 
+export async function uploadAquariumImageToS3(
+  buffer: Buffer,
+  fileName: string,
+  contentType: string,
+  aquariumId: string
+): Promise<string> {
+  const key = `aquariums/${aquariumId}/${Date.now()}-${sanitizeFileName(fileName)}`;
+
+  await s3Client.send(
+    new PutObjectCommand({
+      Bucket: BUCKET,
+      Key: key,
+      Body: buffer,
+      ContentType: contentType,
+      ACL: 'private',
+    })
+  );
+
+  return key;
+}
+
 export async function getSignedImageUrl(key: string): Promise<string> {
   return getSignedUrl(
     s3Client,

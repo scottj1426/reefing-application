@@ -2,7 +2,6 @@
 import express, { type Express } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 import usersRouter from './routes/users.route';
@@ -11,6 +10,7 @@ import equipmentRouter from './routes/equipment.route';
 import coralsRouter from './routes/corals.route';
 import publicRouter from './routes/public.route';
 import { authMiddleware } from './middleware/auth';
+import { apiLimiter } from './middleware/rateLimiters';
 
 dotenv.config();
 
@@ -21,23 +21,6 @@ const isProduction = process.env.NODE_ENV?.toLowerCase() === 'production';
 
 // Security headers
 app.use(helmet());
-
-// Rate limiting
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requests per window
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { success: false, error: 'Too many requests, please try again later' },
-});
-
-const uploadLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20, // 20 uploads per 15 minutes
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { success: false, error: 'Too many uploads, please try again later' },
-});
 
 app.use('/api/', apiLimiter);
 
@@ -155,5 +138,4 @@ app.get('/', (req, res) => {
   res.json({ message: 'Reefing API' });
 });
 
-export { uploadLimiter };
 export default app;

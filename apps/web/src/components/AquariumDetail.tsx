@@ -43,11 +43,13 @@ export const AquariumDetail = () => {
   const [corals, setCorals] = useState<Coral[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const { getAquarium } = useAquariums();
+  const { getAquarium, uploadAquariumPhoto, deleteAquariumPhoto } = useAquariums();
   const { getEquipment, createEquipment, deleteEquipment } = useEquipment(id || '');
   const { getCorals, createCoral, deleteCoral, uploadCoralPhoto, deleteCoralPhoto } = useCorals(id || '');
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const tankPhotoInputRef = useRef<HTMLInputElement>(null);
   const [uploadingCoralId, setUploadingCoralId] = useState<string | null>(null);
+  const [uploadingTankPhoto, setUploadingTankPhoto] = useState(false);
 
   const {
     isOpen: isEquipmentOpen,
@@ -155,6 +157,37 @@ export const AquariumDetail = () => {
     }
   };
 
+  const handleTankPhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !aquarium) return;
+
+    try {
+      setUploadingTankPhoto(true);
+      const updated = await uploadAquariumPhoto(aquarium.id, file);
+      setAquarium(updated);
+    } catch (error) {
+      console.error('Failed to upload tank photo:', error);
+    } finally {
+      setUploadingTankPhoto(false);
+      if (tankPhotoInputRef.current) {
+        tankPhotoInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleDeleteTankPhoto = async () => {
+    if (!aquarium) return;
+    try {
+      setUploadingTankPhoto(true);
+      const updated = await deleteAquariumPhoto(aquarium.id);
+      setAquarium(updated);
+    } catch (error) {
+      console.error('Failed to delete tank photo:', error);
+    } finally {
+      setUploadingTankPhoto(false);
+    }
+  };
+
   const handleDeleteCoral = async (coralId: string) => {
     try {
       await deleteCoral(coralId);
@@ -194,7 +227,51 @@ export const AquariumDetail = () => {
       <Container maxW="container.xl" py={8}>
         <VStack spacing={6} align="stretch">
           {/* Header */}
-          <Card bg="white">
+          <Card bg="white" overflow="hidden">
+            <Box position="relative">
+              {aquarium.imageUrl ? (
+                <Image
+                  src={aquarium.imageUrl}
+                  alt={aquarium.name}
+                  h="220px"
+                  w="100%"
+                  objectFit="cover"
+                />
+              ) : (
+                <Box
+                  h="220px"
+                  bgGradient={
+                    aquarium.type === 'reef'
+                      ? 'linear(to-br, reef.400, ocean.600)'
+                      : aquarium.type === 'saltwater'
+                      ? 'linear(to-br, blue.400, ocean.600)'
+                      : 'linear(to-br, green.400, teal.600)'
+                  }
+                />
+              )}
+              <HStack position="absolute" top={3} right={3} spacing={2}>
+                {aquarium.imageUrl && (
+                  <IconButton
+                    aria-label="Delete tank photo"
+                    icon={<DeleteIcon />}
+                    size="sm"
+                    colorScheme="red"
+                    variant="solid"
+                    isDisabled={uploadingTankPhoto}
+                    onClick={handleDeleteTankPhoto}
+                  />
+                )}
+                <IconButton
+                  aria-label="Upload tank photo"
+                  icon={uploadingTankPhoto ? <Spinner size="sm" /> : <AttachmentIcon />}
+                  size="sm"
+                  colorScheme="ocean"
+                  variant="solid"
+                  isDisabled={uploadingTankPhoto}
+                  onClick={() => tankPhotoInputRef.current?.click()}
+                />
+              </HStack>
+            </Box>
             <CardHeader>
               <VStack align="start" spacing={2}>
                 <Heading size="xl">{aquarium.name}</Heading>
@@ -378,6 +455,15 @@ export const AquariumDetail = () => {
           }
           e.target.value = '';
         }}
+      />
+
+      {/* Hidden file input for tank photo uploads */}
+      <input
+        ref={tankPhotoInputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={handleTankPhotoSelect}
       />
 
       {/* Add Equipment Modal */}

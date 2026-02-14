@@ -53,6 +53,20 @@ export class AquariumService {
       where: { id },
     });
   }
+
+  async updateImageKey(id: string, imageKey: string): Promise<Aquarium> {
+    return prisma.aquarium.update({
+      where: { id },
+      data: { imageKey },
+    });
+  }
+
+  async clearImageKey(id: string): Promise<Aquarium> {
+    return prisma.aquarium.update({
+      where: { id },
+      data: { imageKey: null },
+    });
+  }
 }
 
 export const aquariumService = new AquariumService();

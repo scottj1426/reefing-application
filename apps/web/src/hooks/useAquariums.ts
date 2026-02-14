@@ -15,6 +15,13 @@ export const useAquariums = () => {
     };
   };
 
+  const getAuthHeader = async () => {
+    const token = await getAccessTokenSilently();
+    return {
+      Authorization: `Bearer ${token}`,
+    };
+  };
+
   const getAquariums = async (): Promise<Aquarium[]> => {
     const headers = await getAuthHeaders();
     const response = await axios.get<ApiResponse<Aquarium[]>>(
@@ -81,11 +88,61 @@ export const useAquariums = () => {
     await axios.delete(`${API_URL}/api/aquariums/${id}`, { headers });
   };
 
+  const uploadAquariumPhoto = async (id: string, file: File): Promise<Aquarium> => {
+    try {
+      const headers = await getAuthHeader();
+      const formData = new FormData();
+      formData.append('photo', file);
+
+      const response = await axios.post<ApiResponse<Aquarium>>(
+        `${API_URL}/api/aquariums/${id}/photo`,
+        formData,
+        { headers }
+      );
+
+      if (!response.data.success || !response.data.data) {
+        throw new Error(response.data.error || 'Failed to upload aquarium photo');
+      }
+
+      return response.data.data;
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.error ||
+        error?.message ||
+        'Failed to upload aquarium photo';
+      throw new Error(message);
+    }
+  };
+
+  const deleteAquariumPhoto = async (id: string): Promise<Aquarium> => {
+    try {
+      const headers = await getAuthHeader();
+      const response = await axios.delete<ApiResponse<Aquarium>>(
+        `${API_URL}/api/aquariums/${id}/photo`,
+        { headers }
+      );
+
+      if (!response.data.success || !response.data.data) {
+        throw new Error(response.data.error || 'Failed to delete aquarium photo');
+      }
+
+      return response.data.data;
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.error ||
+        error?.message ||
+        'Failed to delete aquarium photo';
+      throw new Error(message);
+    }
+  };
+
   return {
     getAquariums,
     getAquarium,
     createAquarium,
     updateAquarium,
     deleteAquarium,
+    uploadAquariumPhoto,
+    deleteAquariumPhoto,
   };
 };

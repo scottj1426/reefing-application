@@ -27,6 +27,7 @@ model Aquarium {
   type        String      // "reef", "freshwater", "saltwater"
   volume      Int         // gallons
   description String?
+  imageKey    String?     @map("image_key")
   userId      String      @map("user_id")
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   equipment   Equipment[]
