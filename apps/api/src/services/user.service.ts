@@ -7,6 +7,7 @@ const userSelect = {
   id: true,
   email: true,
   name: true,
+  profileImageKey: true,
   username: true,
   auth0Id: true,
   createdAt: true,
@@ -98,6 +99,7 @@ export class UserService {
         user = await prisma.user.update({
           where: { id: existingByEmail.id },
           data: { auth0Id, name: name || existingByEmail.name },
+          select: userSelect,
         });
       } else {
         try {
