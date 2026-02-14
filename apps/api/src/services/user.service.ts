@@ -3,16 +3,28 @@ import { CreateUserDto } from '../types/shared';
 
 const prisma = new PrismaClient();
 
+const userSelect = {
+  id: true,
+  email: true,
+  name: true,
+  username: true,
+  auth0Id: true,
+  createdAt: true,
+  updatedAt: true,
+};
+
 export class UserService {
   async findByAuth0Id(auth0Id: string): Promise<User | null> {
     return prisma.user.findUnique({
       where: { auth0Id },
+      select: userSelect,
     });
   }
 
   async findByEmail(email: string): Promise<User | null> {
     return prisma.user.findUnique({
       where: { email },
+      select: userSelect,
     });
   }
 
@@ -50,6 +62,7 @@ export class UserService {
           auth0Id: data.auth0Id,
           username,
         },
+        select: userSelect,
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2022') {
@@ -59,6 +72,7 @@ export class UserService {
             name: data.name || null,
             auth0Id: data.auth0Id,
           },
+          select: userSelect,
         });
       }
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
@@ -67,6 +81,7 @@ export class UserService {
           return prisma.user.update({
             where: { id: existingByEmail.id },
             data: { auth0Id: data.auth0Id, name: data.name || existingByEmail.name },
+            select: userSelect,
           });
         }
       }
@@ -109,6 +124,7 @@ export class UserService {
         user = await prisma.user.update({
           where: { auth0Id },
           data: { email, name: name || user.name },
+          select: userSelect,
         });
       }
     }
@@ -120,6 +136,7 @@ export class UserService {
     return prisma.user.update({
       where: { auth0Id },
       data,
+      select: userSelect,
     });
   }
 }
