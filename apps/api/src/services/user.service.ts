@@ -10,9 +10,20 @@ export class UserService {
     });
   }
 
-  private async generateUniqueUsername(email: string): Promise<string> {
+  async findByEmail(email: string): Promise<User | null> {
+    return prisma.user.findUnique({
+      where: { email },
+    });
+  }
+
+  private async generateUniqueUsername(email: string, auth0Id?: string): Promise<string> {
     // Extract base username from email (part before @)
-    const baseUsername = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+    let baseUsername = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+
+    if (!baseUsername && auth0Id) {
+      const sanitized = auth0Id.toLowerCase().replace(/[^a-z0-9]/g, '');
+      baseUsername = sanitized || 'user';
+    }
 
     // Try the base username first
     let username = baseUsername;
@@ -30,7 +41,7 @@ export class UserService {
   }
 
   async createUser(data: CreateUserDto): Promise<User> {
-    const username = await this.generateUniqueUsername(data.email);
+    const username = await this.generateUniqueUsername(data.email, data.auth0Id);
 
     return prisma.user.create({
       data: {
@@ -46,11 +57,31 @@ export class UserService {
     let user = await this.findByAuth0Id(auth0Id);
 
     if (!user) {
-      user = await this.createUser({
-        auth0Id,
-        email,
-        name,
-      });
+      const existingByEmail = await this.findByEmail(email);
+      if (existingByEmail) {
+        user = await prisma.user.update({
+          where: { id: existingByEmail.id },
+          data: { auth0Id, name: name || existingByEmail.name },
+        });
+      } else {
+        try {
+          user = await this.createUser({
+            auth0Id,
+            email,
+            name,
+          });
+        } catch (error) {
+          const retryUser = await this.findByAuth0Id(auth0Id);
+          if (retryUser) {
+            return retryUser;
+          }
+          const retryByEmail = await this.findByEmail(email);
+          if (retryByEmail) {
+            return retryByEmail;
+          }
+          throw error;
+        }
+      }
     } else {
       // Update email if it's still a placeholder
       if (user.email.includes('@auth0.placeholder') && !email.includes('@auth0.placeholder')) {
@@ -64,17 +95,10 @@ export class UserService {
     return user;
   }
 
-  async updateUser(auth0Id: string, data: { name?: string; profileImageKey?: string | null }): Promise<User> {
+  async updateUser(auth0Id: string, data: { name?: string }): Promise<User> {
     return prisma.user.update({
       where: { auth0Id },
       data,
-    });
-  }
-
-  async updateProfileImageKey(auth0Id: string, profileImageKey: string | null): Promise<User> {
-    return prisma.user.update({
-      where: { auth0Id },
-      data: { profileImageKey },
     });
   }
 }

@@ -29,23 +29,25 @@ export const ensureUser = async (
     if (!user || user.email.includes('@auth0.placeholder')) {
       // Fetch user info from Auth0 to get real email
       const token = req.headers.authorization?.replace('Bearer ', '');
-      let email = `${auth0Id}@auth0.placeholder`;
-      let name = undefined;
+      let email = req.auth?.email || `${auth0Id}@auth0.placeholder`;
+      let name = req.auth?.name;
 
-      try {
-        const AUTH0_DOMAIN = process.env.AUTH0_DOMAIN;
-        const userInfoResponse = await axios.get(`https://${AUTH0_DOMAIN}/userinfo`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+      if (token && process.env.AUTH0_DOMAIN) {
+        try {
+          const AUTH0_DOMAIN = process.env.AUTH0_DOMAIN;
+          const userInfoResponse = await axios.get(`https://${AUTH0_DOMAIN}/userinfo`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
 
-        email = userInfoResponse.data.email || email;
-        name = userInfoResponse.data.name || userInfoResponse.data.nickname;
+          email = userInfoResponse.data.email || email;
+          name = userInfoResponse.data.name || userInfoResponse.data.nickname || name;
 
-        console.log(`Got user info from Auth0: email=${email}, name=${name}`);
-      } catch (error) {
-        console.error('Failed to fetch user info from Auth0:', error);
+          console.log(`Got user info from Auth0: email=${email}, name=${name}`);
+        } catch (error) {
+          console.error('Failed to fetch user info from Auth0:', error);
+        }
       }
 
       if (!user) {

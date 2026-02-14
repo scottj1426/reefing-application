@@ -20,6 +20,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           redirect_uri: window.location.origin,
           audience: audience,
           scope: 'openid profile email',
+          prompt: 'login',
         }}
         cacheLocation="localstorage"
         useRefreshTokens={true}

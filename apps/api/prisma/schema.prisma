@@ -13,7 +13,6 @@ model User {
   name      String?
   username  String?    @unique
   auth0Id   String     @unique @map("auth0_id")
-  profileImageKey String? @map("profile_image_key")
   createdAt DateTime   @default(now()) @map("created_at")
   updatedAt DateTime   @updatedAt @map("updated_at")
   aquariums Aquarium[]
@@ -27,15 +26,25 @@ model Aquarium {
   type        String      // "reef", "freshwater", "saltwater"
   volume      Int         // gallons
   description String?
-  imageKey    String?     @map("image_key")
   userId      String      @map("user_id")
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   equipment   Equipment[]
   corals      Coral[]
+  photos      AquariumPhoto[]
   createdAt   DateTime    @default(now()) @map("created_at")
   updatedAt   DateTime    @updatedAt @map("updated_at")
 
   @@map("aquariums")
+}
+
+model AquariumPhoto {
+  id         String   @id @default(cuid())
+  imageKey   String   @map("image_key")
+  aquariumId String   @map("aquarium_id")
+  aquarium   Aquarium @relation(fields: [aquariumId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("aquarium_photos")
 }
 
 model Equipment {

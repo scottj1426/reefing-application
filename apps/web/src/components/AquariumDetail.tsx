@@ -43,7 +43,7 @@ export const AquariumDetail = () => {
   const [corals, setCorals] = useState<Coral[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const { getAquarium, uploadAquariumPhoto, deleteAquariumPhoto } = useAquariums();
+  const { getAquarium, uploadAquariumPhotos, deleteAquariumPhoto } = useAquariums();
   const { getEquipment, createEquipment, deleteEquipment } = useEquipment(id || '');
   const { getCorals, createCoral, deleteCoral, uploadCoralPhoto, deleteCoralPhoto } = useCorals(id || '');
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -157,16 +157,27 @@ export const AquariumDetail = () => {
     }
   };
 
+  const handleDeleteCoral = async (coralId: string) => {
+    try {
+      await deleteCoral(coralId);
+      setCorals(corals.filter((c) => c.id !== coralId));
+    } catch (error) {
+      console.error('Failed to delete coral:', error);
+    }
+  };
+
   const handleTankPhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !aquarium) return;
+    const fileList = e.target.files;
+    if (!fileList || !aquarium) return;
+    const files = Array.from(fileList);
+    if (!files.length) return;
 
     try {
       setUploadingTankPhoto(true);
-      const updated = await uploadAquariumPhoto(aquarium.id, file);
+      const updated = await uploadAquariumPhotos(aquarium.id, files);
       setAquarium(updated);
     } catch (error) {
-      console.error('Failed to upload tank photo:', error);
+      console.error('Failed to upload tank photos:', error);
     } finally {
       setUploadingTankPhoto(false);
       if (tankPhotoInputRef.current) {
@@ -175,25 +186,16 @@ export const AquariumDetail = () => {
     }
   };
 
-  const handleDeleteTankPhoto = async () => {
+  const handleDeleteTankPhoto = async (photoId: string) => {
     if (!aquarium) return;
     try {
       setUploadingTankPhoto(true);
-      const updated = await deleteAquariumPhoto(aquarium.id);
+      const updated = await deleteAquariumPhoto(aquarium.id, photoId);
       setAquarium(updated);
     } catch (error) {
       console.error('Failed to delete tank photo:', error);
     } finally {
       setUploadingTankPhoto(false);
-    }
-  };
-
-  const handleDeleteCoral = async (coralId: string) => {
-    try {
-      await deleteCoral(coralId);
-      setCorals(corals.filter((c) => c.id !== coralId));
-    } catch (error) {
-      console.error('Failed to delete coral:', error);
     }
   };
 
@@ -229,9 +231,9 @@ export const AquariumDetail = () => {
           {/* Header */}
           <Card bg="white" overflow="hidden">
             <Box position="relative">
-              {aquarium.imageUrl ? (
+              {aquarium.photos?.[0]?.imageUrl ? (
                 <Image
-                  src={aquarium.imageUrl}
+                  src={aquarium.photos[0].imageUrl}
                   alt={aquarium.name}
                   h="220px"
                   w="100%"
@@ -250,19 +252,8 @@ export const AquariumDetail = () => {
                 />
               )}
               <HStack position="absolute" top={3} right={3} spacing={2}>
-                {aquarium.imageUrl && (
-                  <IconButton
-                    aria-label="Delete tank photo"
-                    icon={<DeleteIcon />}
-                    size="sm"
-                    colorScheme="red"
-                    variant="solid"
-                    isDisabled={uploadingTankPhoto}
-                    onClick={handleDeleteTankPhoto}
-                  />
-                )}
                 <IconButton
-                  aria-label="Upload tank photo"
+                  aria-label="Upload tank photos"
                   icon={uploadingTankPhoto ? <Spinner size="sm" /> : <AttachmentIcon />}
                   size="sm"
                   colorScheme="ocean"
@@ -287,6 +278,34 @@ export const AquariumDetail = () => {
                   <Text color="gray.600" mt={2}>
                     {aquarium.description}
                   </Text>
+                )}
+                {aquarium.photos && aquarium.photos.length > 0 && (
+                  <HStack spacing={2} mt={3} wrap="wrap">
+                    {aquarium.photos.map((photo) => (
+                      <Box key={photo.id} position="relative">
+                        <Image
+                          src={photo.imageUrl}
+                          alt="Tank photo"
+                          h="60px"
+                          w="90px"
+                          objectFit="cover"
+                          borderRadius="md"
+                        />
+                        <IconButton
+                          aria-label="Delete tank photo"
+                          icon={<DeleteIcon />}
+                          size="xs"
+                          colorScheme="red"
+                          variant="solid"
+                          position="absolute"
+                          top={1}
+                          right={1}
+                          isDisabled={uploadingTankPhoto}
+                          onClick={() => handleDeleteTankPhoto(photo.id)}
+                        />
+                      </Box>
+                    ))}
+                  </HStack>
                 )}
               </VStack>
             </CardHeader>
@@ -457,14 +476,14 @@ export const AquariumDetail = () => {
         }}
       />
 
-      {/* Hidden file input for tank photo uploads */}
-      <input
-        ref={tankPhotoInputRef}
-        type="file"
-        accept="image/*"
-        style={{ display: 'none' }}
-        onChange={handleTankPhotoSelect}
-      />
+        <input
+          ref={tankPhotoInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          style={{ display: 'none' }}
+          onChange={handleTankPhotoSelect}
+        />
 
       {/* Add Equipment Modal */}
       <Modal isOpen={isEquipmentOpen} onClose={onEquipmentClose}>

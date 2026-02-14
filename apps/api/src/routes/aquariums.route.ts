@@ -21,18 +21,24 @@ const upload = multer({
 router.use(authMiddleware);
 router.use(ensureUser);
 
-// Helper: attach signed imageUrl and strip internal imageKey
+// Helper: attach signed photo URLs and strip internal image keys
 async function attachImageUrl(aquarium: any): Promise<any> {
-  const { imageKey, ...rest } = aquarium;
-  if (imageKey) {
-    try {
-      const imageUrl = await getSignedImageUrl(imageKey);
-      return { ...rest, imageUrl };
-    } catch {
-      return rest;
-    }
-  }
-  return rest;
+  const photos = Array.isArray(aquarium.photos) ? aquarium.photos : [];
+  const photoUrls = await Promise.all(
+    photos.map(async (photo: any) => {
+      try {
+        const imageUrl = await getSignedImageUrl(photo.imageKey);
+        return { id: photo.id, imageUrl };
+      } catch {
+        return null;
+      }
+    })
+  );
+
+  return {
+    ...aquarium,
+    photos: photoUrls.filter(Boolean),
+  };
 }
 
 // GET /api/aquariums - Get all aquariums for current user
@@ -125,62 +131,22 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-// POST /api/aquariums/:id/photo - Upload tank photo
-router.post('/:id/photo', uploadLimiter, upload.single('photo'), async (req: Request, res: Response, next: NextFunction) => {
+const handlePhotoUpload = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const file = req.file;
+    const files = (req.files as Express.Multer.File[]) || [];
 
-    if (!file) {
+    if (!files.length) {
       return res.status(400).json({ success: false, error: 'No file uploaded' } as ApiResponse);
     }
 
-    if (!ALLOWED_IMAGE_TYPES.includes(file.mimetype)) {
-      return res.status(400).json({ success: false, error: 'File must be a JPEG, PNG, WebP, or GIF image' } as ApiResponse);
-    }
-
-    const existing = (await aquariumService.findById(id)) as any;
-    if (!existing) {
-      return res.status(404).json({ success: false, error: 'Aquarium not found' } as ApiResponse);
-    }
-
-    if (existing.userId !== req.user!.id) {
-      return res.status(403).json({ success: false, error: 'Forbidden' } as ApiResponse);
-    }
-
-    // Delete old photo if exists
-    if (existing.imageKey) {
-      try {
-        await deleteFromS3(existing.imageKey);
-      } catch (err) {
-        logger.error('Failed to delete old aquarium photo from S3', err, { aquariumId: id });
+    for (const file of files) {
+      if (!ALLOWED_IMAGE_TYPES.includes(file.mimetype)) {
+        return res.status(400).json({ success: false, error: 'File must be a JPEG, PNG, WebP, or GIF image' } as ApiResponse);
       }
     }
 
-    const key = await uploadAquariumImageToS3(file.buffer, file.originalname, file.mimetype, id);
-    const aquarium = await aquariumService.updateImageKey(id, key);
-    const imageUrl = await getSignedImageUrl(key);
-    const { imageKey: _stripped, ...aquariumData } = aquarium as any;
-
-    logger.info('Aquarium photo uploaded', { aquariumId: id, userId: req.user!.id });
-
-    res.json({
-      success: true,
-      data: { ...aquariumData, imageUrl },
-      message: 'Photo uploaded successfully',
-    } as ApiResponse);
-  } catch (error) {
-    logger.error('Failed to upload aquarium photo', error, { aquariumId: req.params.id });
-    res.status(500).json({ success: false, error: 'Failed to upload photo' } as ApiResponse);
-  }
-});
-
-// DELETE /api/aquariums/:id/photo - Delete tank photo
-router.delete('/:id/photo', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { id } = req.params;
-
-    const existing = (await aquariumService.findById(id)) as any;
+    const existing = await aquariumService.findById(id);
     if (!existing) {
       return res.status(404).json({ success: false, error: 'Aquarium not found' } as ApiResponse);
     }
@@ -189,22 +155,73 @@ router.delete('/:id/photo', async (req: Request, res: Response, next: NextFuncti
       return res.status(403).json({ success: false, error: 'Forbidden' } as ApiResponse);
     }
 
-    if (existing.imageKey) {
-      await deleteFromS3(existing.imageKey);
-    }
+    const keys = await Promise.all(
+      files.map((file) =>
+        uploadAquariumImageToS3(file.buffer, file.originalname, file.mimetype, id)
+      )
+    );
 
-    const aquarium = await aquariumService.clearImageKey(id);
-    const { imageKey: _stripped, ...aquariumData } = aquarium as any;
+    const aquarium = await aquariumService.addPhotos(id, keys);
+    const withUrls = await attachImageUrl(aquarium as any);
 
-    logger.info('Aquarium photo deleted', { aquariumId: id, userId: req.user!.id });
+    logger.info('Aquarium photos uploaded', { aquariumId: id, userId: req.user!.id, count: keys.length });
 
     res.json({
       success: true,
-      data: aquariumData,
+      data: withUrls,
+      message: 'Photos uploaded successfully',
+    } as ApiResponse);
+  } catch (error) {
+    logger.error('Failed to upload aquarium photos', error, { aquariumId: req.params.id });
+    res.status(500).json({ success: false, error: 'Failed to upload photos' } as ApiResponse);
+  }
+};
+
+// POST /api/aquariums/:id/photo - Upload single tank photo (compat)
+router.post('/:id/photo', uploadLimiter, upload.single('photo'), async (req: Request, res: Response) => {
+  if (req.file) {
+    req.files = [req.file] as any;
+  }
+  return handlePhotoUpload(req, res);
+});
+
+// POST /api/aquariums/:id/photos - Upload multiple tank photos
+router.post('/:id/photos', uploadLimiter, upload.array('photos', 10), handlePhotoUpload);
+
+// DELETE /api/aquariums/:id/photos/:photoId - Delete single tank photo
+router.delete('/:id/photos/:photoId', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id, photoId } = req.params;
+
+    const existing = await aquariumService.findById(id);
+    if (!existing) {
+      return res.status(404).json({ success: false, error: 'Aquarium not found' } as ApiResponse);
+    }
+
+    if (existing.userId !== req.user!.id) {
+      return res.status(403).json({ success: false, error: 'Forbidden' } as ApiResponse);
+    }
+
+    const photos = await aquariumService.listPhotos(id);
+    const target = photos.find((photo) => photo.id === photoId);
+    if (!target) {
+      return res.status(404).json({ success: false, error: 'Photo not found' } as ApiResponse);
+    }
+
+    await deleteFromS3(target.imageKey);
+    await aquariumService.deletePhoto(photoId);
+    const updated = await aquariumService.findById(id);
+    const withUrls = await attachImageUrl(updated as any);
+
+    logger.info('Aquarium photo deleted', { aquariumId: id, userId: req.user!.id, photoId });
+
+    res.json({
+      success: true,
+      data: withUrls,
       message: 'Photo deleted successfully',
     } as ApiResponse);
   } catch (error) {
-    logger.error('Failed to delete aquarium photo', error, { aquariumId: req.params.id });
+    logger.error('Failed to delete aquarium photo', error, { aquariumId: req.params.id, photoId: req.params.photoId });
     res.status(500).json({ success: false, error: 'Failed to delete photo' } as ApiResponse);
   }
 });
@@ -215,7 +232,7 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
     const data: Partial<CreateAquariumDto> = req.body;
 
-    const existing = (await aquariumService.findById(id)) as any;
+    const existing = await aquariumService.findById(id);
     if (!existing) {
       return res.status(404).json({
         success: false,
@@ -254,7 +271,7 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction) =>
   try {
     const { id } = req.params;
 
-    const existing = (await aquariumService.findById(id)) as any;
+    const existing = await aquariumService.findById(id);
     if (!existing) {
       return res.status(404).json({
         success: false,
@@ -269,14 +286,16 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction) =>
       } as ApiResponse);
     }
 
-    // Clean up S3 photo if exists
-    if (existing.imageKey) {
-      try {
-        await deleteFromS3(existing.imageKey);
-      } catch (err) {
-        logger.error('Failed to delete aquarium photo during deletion', err, { aquariumId: id });
-      }
-    }
+    const photos = await aquariumService.listPhotos(id);
+    await Promise.all(
+      photos.map(async (photo) => {
+        try {
+          await deleteFromS3(photo.imageKey);
+        } catch (err) {
+          logger.error('Failed to delete aquarium photo during deletion', err, { aquariumId: id, photoId: photo.id });
+        }
+      })
+    );
 
     await aquariumService.delete(id);
     logger.info('Aquarium deleted', { aquariumId: id, userId: req.user!.id });

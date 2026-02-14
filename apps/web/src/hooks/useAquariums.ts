@@ -2,7 +2,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
 import type { Aquarium, ApiResponse, CreateAquariumDto } from '../types/shared';
 
-const API_URL = import.meta.env.VITE_API_URL || '';
+const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/api\/?$/, '');
 
 export const useAquariums = () => {
   const { getAccessTokenSilently } = useAuth0();
@@ -88,20 +88,20 @@ export const useAquariums = () => {
     await axios.delete(`${API_URL}/api/aquariums/${id}`, { headers });
   };
 
-  const uploadAquariumPhoto = async (id: string, file: File): Promise<Aquarium> => {
+  const uploadAquariumPhotos = async (id: string, files: File[]): Promise<Aquarium> => {
     try {
       const headers = await getAuthHeader();
       const formData = new FormData();
-      formData.append('photo', file);
+      files.forEach((file) => formData.append('photos', file));
 
       const response = await axios.post<ApiResponse<Aquarium>>(
-        `${API_URL}/api/aquariums/${id}/photo`,
+        `${API_URL}/api/aquariums/${id}/photos`,
         formData,
         { headers }
       );
 
       if (!response.data.success || !response.data.data) {
-        throw new Error(response.data.error || 'Failed to upload aquarium photo');
+        throw new Error(response.data.error || 'Failed to upload aquarium photos');
       }
 
       return response.data.data;
@@ -109,16 +109,16 @@ export const useAquariums = () => {
       const message =
         error?.response?.data?.error ||
         error?.message ||
-        'Failed to upload aquarium photo';
+        'Failed to upload aquarium photos';
       throw new Error(message);
     }
   };
 
-  const deleteAquariumPhoto = async (id: string): Promise<Aquarium> => {
+  const deleteAquariumPhoto = async (aquariumId: string, photoId: string): Promise<Aquarium> => {
     try {
       const headers = await getAuthHeader();
       const response = await axios.delete<ApiResponse<Aquarium>>(
-        `${API_URL}/api/aquariums/${id}/photo`,
+        `${API_URL}/api/aquariums/${aquariumId}/photos/${photoId}`,
         { headers }
       );
 
@@ -142,7 +142,7 @@ export const useAquariums = () => {
     createAquarium,
     updateAquarium,
     deleteAquarium,
-    uploadAquariumPhoto,
+    uploadAquariumPhotos,
     deleteAquariumPhoto,
   };
 };

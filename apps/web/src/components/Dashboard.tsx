@@ -1,5 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -13,7 +13,6 @@ import {
   CardHeader,
   CardBody,
   Badge,
-  Avatar,
   Input,
   Select,
   Textarea,
@@ -27,24 +26,19 @@ import {
   HStack,
   IconButton,
   useDisclosure,
-  useToast,
+  Image,
   Spinner,
   Center,
-  Image,
 } from '@chakra-ui/react';
 import { DeleteIcon } from '@chakra-ui/icons';
 import { useAquariums } from '../hooks/useAquariums';
-import { useUser } from '../hooks/useUser';
-import type { Aquarium, CreateAquariumDto, User } from '../types/shared';
+import type { Aquarium, CreateAquariumDto } from '../types/shared';
 import { Navbar } from './Navbar';
 
 export const Dashboard = () => {
   const { isAuthenticated, isLoading, loginWithRedirect, user } = useAuth0();
   const navigate = useNavigate();
   const [aquariums, setAquariums] = useState<Aquarium[]>([]);
-  const [profile, setProfile] = useState<User | null>(null);
-  const [profileError, setProfileError] = useState<string | null>(null);
-  const [uploadingProfileImage, setUploadingProfileImage] = useState(false);
   const [newAquarium, setNewAquarium] = useState<CreateAquariumDto>({
     name: '',
     type: 'reef',
@@ -52,30 +46,13 @@ export const Dashboard = () => {
     description: '',
   });
   const { getAquariums, createAquarium, deleteAquarium } = useAquariums();
-  const { getMe, uploadProfileImage, deleteProfileImage } = useUser();
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const profileInputRef = useRef<HTMLInputElement>(null);
-  const toast = useToast();
 
   useEffect(() => {
     if (isAuthenticated) {
       getAquariums()
         .then((aquariumData) => setAquariums(aquariumData))
         .catch((error) => console.error('Failed to fetch aquariums:', error));
-    }
-  }, [isAuthenticated]);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      getMe()
-        .then((userData) => {
-          setProfile(userData);
-          setProfileError(null);
-        })
-        .catch((error) => {
-          console.error('Failed to fetch profile:', error);
-          setProfileError('Failed to load profile');
-        });
     }
   }, [isAuthenticated]);
 
@@ -98,61 +75,6 @@ export const Dashboard = () => {
       setAquariums(aquariums.filter((a) => a.id !== id));
     } catch (error) {
       console.error('Failed to delete aquarium:', error);
-    }
-  };
-
-  const handleProfileFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      setUploadingProfileImage(true);
-      const updated = await uploadProfileImage(file);
-      setProfile(updated);
-      toast({
-        title: 'Profile photo updated',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-    } catch (error) {
-      console.error('Failed to upload profile image:', error);
-      toast({
-        title: 'Upload failed',
-        description: 'Please try again with a different image.',
-        status: 'error',
-        duration: 4000,
-        isClosable: true,
-      });
-    } finally {
-      setUploadingProfileImage(false);
-      if (profileInputRef.current) {
-        profileInputRef.current.value = '';
-      }
-    }
-  };
-
-  const handleDeleteProfileImage = async () => {
-    try {
-      setUploadingProfileImage(true);
-      const updated = await deleteProfileImage();
-      setProfile(updated);
-      toast({
-        title: 'Profile photo removed',
-        status: 'info',
-        duration: 3000,
-        isClosable: true,
-      });
-    } catch (error) {
-      console.error('Failed to delete profile image:', error);
-      toast({
-        title: 'Remove failed',
-        status: 'error',
-        duration: 4000,
-        isClosable: true,
-      });
-    } finally {
-      setUploadingProfileImage(false);
     }
   };
 
@@ -208,67 +130,6 @@ export const Dashboard = () => {
               </Button>
             </Flex>
 
-            {/* Profile Image */}
-            <Card>
-              <CardHeader>
-                <Heading size="sm">Profile Image</Heading>
-              </CardHeader>
-              <CardBody>
-                <Flex align="center" gap={6} wrap="wrap">
-                  <Button
-                    variant="ghost"
-                    p={0}
-                    onClick={() => profileInputRef.current?.click()}
-                    _hover={{ bg: 'transparent' }}
-                    _active={{ bg: 'transparent' }}
-                    aria-label="Upload profile image"
-                  >
-                    <Avatar
-                      size="xl"
-                      name={user?.name || user?.email}
-                      src={profile?.profileImageUrl || user?.picture}
-                    />
-                  </Button>
-                  <VStack align="start" spacing={2}>
-                    <HStack spacing={2}>
-                      <Button
-                        onClick={() => profileInputRef.current?.click()}
-                        colorScheme="ocean"
-                        isLoading={uploadingProfileImage}
-                      >
-                        Upload Photo
-                      </Button>
-                      {profile?.profileImageUrl && (
-                        <Button
-                          variant="outline"
-                          colorScheme="red"
-                          onClick={handleDeleteProfileImage}
-                          isLoading={uploadingProfileImage}
-                        >
-                          Remove
-                        </Button>
-                      )}
-                    </HStack>
-                    {profileError && (
-                      <Text color="red.500" fontSize="sm">
-                        {profileError}
-                      </Text>
-                    )}
-                    <Text color="gray.500" fontSize="sm">
-                      Click the avatar or button to upload. JPG/PNG up to 4.5MB.
-                    </Text>
-                  </VStack>
-                </Flex>
-                <Input
-                  ref={profileInputRef}
-                  type="file"
-                  accept="image/*"
-                  display="none"
-                  onChange={handleProfileFileSelect}
-                />
-              </CardBody>
-            </Card>
-
             {/* Aquariums Grid */}
             {aquariums.length === 0 ? (
               <Center py={16}>
@@ -297,9 +158,9 @@ export const Dashboard = () => {
                     transition="all 0.2s"
                   >
                     <Box h="200px" borderTopRadius="lg" overflow="hidden">
-                      {aquarium.imageUrl ? (
+                      {aquarium.photos?.[0]?.imageUrl ? (
                         <Image
-                          src={aquarium.imageUrl}
+                          src={aquarium.photos[0].imageUrl}
                           alt={aquarium.name}
                           h="200px"
                           w="100%"

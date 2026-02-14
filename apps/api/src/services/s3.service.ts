@@ -32,28 +32,6 @@ export async function uploadToS3(
       Key: key,
       Body: buffer,
       ContentType: contentType,
-      ACL: 'private',
-    })
-  );
-
-  return key;
-}
-
-export async function uploadProfileImageToS3(
-  buffer: Buffer,
-  fileName: string,
-  contentType: string,
-  userId: string
-): Promise<string> {
-  const key = `users/${userId}/${Date.now()}-${sanitizeFileName(fileName)}`;
-
-  await s3Client.send(
-    new PutObjectCommand({
-      Bucket: BUCKET,
-      Key: key,
-      Body: buffer,
-      ContentType: contentType,
-      ACL: 'private',
     })
   );
 

@@ -38,6 +38,11 @@ export interface Coral {
   updatedAt: Date;
 }
 
+export interface AquariumPhoto {
+  id: string;
+  imageUrl: string;
+}
+
 // Aquarium type matching Prisma schema
 export interface Aquarium {
   id: string;
@@ -45,8 +50,8 @@ export interface Aquarium {
   type: string;
   volume: number;
   description: string | null;
-  imageUrl?: string | null;
   userId: string;
+  photos?: AquariumPhoto[];
   equipment?: Equipment[];
   corals?: Coral[];
   createdAt: Date;
