@@ -2,6 +2,7 @@
 import express, { type Express } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { PrismaClient } from '@prisma/client';
 import usersRouter from './routes/users.route';
 import aquariumsRouter from './routes/aquariums.route';
 import equipmentRouter from './routes/equipment.route';
@@ -11,6 +12,7 @@ import publicRouter from './routes/public.route';
 dotenv.config();
 
 const app: Express = express();
+const prisma = new PrismaClient();
 
 // Middleware
 app.use(cors({
@@ -61,6 +63,38 @@ app.get('/api/health', (req, res) => {
     message: 'API is running',
     timestamp: new Date().toISOString(),
   });
+});
+
+app.get('/api/health/db', async (req, res) => {
+  try {
+    const databaseUrl = process.env.DATABASE_URL;
+    const host = databaseUrl ? new URL(databaseUrl).host : null;
+
+    const [users, aquariums, corals, equipment] = await Promise.all([
+      prisma.user.count(),
+      prisma.aquarium.count(),
+      prisma.coral.count(),
+      prisma.equipment.count(),
+    ]);
+
+    res.json({
+      success: true,
+      dbHost: host,
+      counts: {
+        users,
+        aquariums,
+        corals,
+        equipment,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Database health check failed',
+      timestamp: new Date().toISOString(),
+    });
+  }
 });
 
 // API routes
