@@ -17,6 +17,8 @@ dotenv.config();
 const app: Express = express();
 const prisma = new PrismaClient();
 
+const buildStamp = '2026-02-14';
+
 const isProduction = process.env.NODE_ENV?.toLowerCase() === 'production';
 
 // Security headers
