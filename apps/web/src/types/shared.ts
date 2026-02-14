@@ -4,6 +4,7 @@ export interface User {
   email: string;
   name: string | null;
   auth0Id: string;
+  profileImageUrl?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -30,6 +31,7 @@ export interface Coral {
   acquisitionDate: Date | null;
   source: string | null;
   notes: string | null;
+  imageKey?: string | null;
   imageUrl?: string | null;
   aquariumId: string;
   createdAt: Date;

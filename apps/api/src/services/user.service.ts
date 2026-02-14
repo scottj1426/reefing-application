@@ -64,10 +64,17 @@ export class UserService {
     return user;
   }
 
-  async updateUser(auth0Id: string, data: { name?: string }): Promise<User> {
+  async updateUser(auth0Id: string, data: { name?: string; profileImageKey?: string | null }): Promise<User> {
     return prisma.user.update({
       where: { auth0Id },
       data,
+    });
+  }
+
+  async updateProfileImageKey(auth0Id: string, profileImageKey: string | null): Promise<User> {
+    return prisma.user.update({
+      where: { auth0Id },
+      data: { profileImageKey },
     });
   }
 }

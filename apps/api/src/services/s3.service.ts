@@ -38,6 +38,26 @@ export async function uploadToS3(
   return key;
 }
 
+export async function uploadProfileImageToS3(
+  buffer: Buffer,
+  fileName: string,
+  contentType: string,
+  userId: string
+): Promise<string> {
+  const key = `users/${userId}/${Date.now()}-${sanitizeFileName(fileName)}`;
+
+  await s3Client.send(
+    new PutObjectCommand({
+      Bucket: BUCKET,
+      Key: key,
+      Body: buffer,
+      ContentType: contentType,
+    })
+  );
+
+  return key;
+}
+
 export async function getSignedImageUrl(key: string): Promise<string> {
   return getSignedUrl(
     s3Client,
