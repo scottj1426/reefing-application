@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://your-api-project.vercel.app/api/:path*"
+      "destination": "https://reefing-application-api.vercel.app/api/:path*"
     }
   ]
 }
